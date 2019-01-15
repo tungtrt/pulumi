@@ -130,6 +130,10 @@ func runTotalStateEdit(stackName string, operation func(opts display.Options, sn
 	if err != nil {
 		return err
 	}
+	crypter, err := s.Backend().GetStackCrypter(s.Ref())
+	if err != nil {
+		return err
+	}
 	snap, err := s.Snapshot(commandContext())
 	if err != nil {
 		return err
@@ -163,7 +167,11 @@ func runTotalStateEdit(stackName string, operation func(opts display.Options, sn
 	}
 
 	// Once we've mutated the snapshot, import it back into the backend so that it can be persisted.
-	bytes, err := json.Marshal(stack.SerializeDeployment(snap))
+	latest, err := stack.SerializeDeployment(snap, crypter)
+	if err != nil {
+		return err
+	}
+	bytes, err := json.Marshal(latest)
 	if err != nil {
 		return err
 	}

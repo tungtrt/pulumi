@@ -460,7 +460,19 @@ func (b *localBackend) ExportDeployment(ctx context.Context,
 		snap = deploy.NewSnapshot(deploy.Manifest{}, nil, nil)
 	}
 
-	data, err := json.Marshal(stack.SerializeDeployment(snap))
+	// TODO(pdg): either cache the crypter or pass it in s.t. we don't accidentally ask for the password multiple
+	// times
+	crypter, err := b.GetStackCrypter(stackRef)
+	if err != nil {
+		return nil, err
+	}
+
+	dep, err := stack.SerializeDeployment(snap, crypter)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := json.Marshal(dep)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +492,14 @@ func (b *localBackend) ImportDeployment(ctx context.Context, stackRef backend.St
 		return err
 	}
 
-	snap, err := stack.DeserializeUntypedDeployment(deployment)
+	// TODO(pdg): either cache the crypter or pass it in s.t. we don't accidentally ask for the password multiple
+	// times
+	crypter, err := b.GetStackCrypter(stackRef)
+	if err != nil {
+		return err
+	}
+
+	snap, err := stack.DeserializeUntypedDeployment(deployment, crypter)
 	if err != nil {
 		return err
 	}

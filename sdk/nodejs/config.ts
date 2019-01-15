@@ -15,6 +15,7 @@
 import * as util from "util";
 import { RunError } from "./errors";
 import { getProject } from "./metadata";
+import { Output, output } from "./resource";
 import { getConfig } from "./runtime";
 
 /**
@@ -138,6 +139,17 @@ export class Config {
     }
 
     /**
+     * getSecret loads a secret string.
+     */
+    public getSecret(key: string): Output<string> | undefined {
+        const raw = this.get(key);
+        if (raw === undefined) {
+            return undefined;
+        }
+        return output(raw).makeSecret();
+    }
+
+    /**
      * require loads a configuration value by its given key.  If it doesn't exist, an error is thrown.
      *
      * @param key The key to lookup.
@@ -192,6 +204,13 @@ export class Config {
             throw new ConfigMissingError(this.fullKey(key));
         }
         return v;
+    }
+
+    /**
+     * requireSecret loads a secret string.
+     */
+    public requireSecret(key: string): Output<string> | undefined {
+        return output(this.require(key)).makeSecret();
     }
 
     /**

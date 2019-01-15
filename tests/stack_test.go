@@ -19,6 +19,7 @@ import (
 	"github.com/pulumi/pulumi/pkg/apitype"
 	"github.com/pulumi/pulumi/pkg/backend/filestate"
 	"github.com/pulumi/pulumi/pkg/resource"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/resource/stack"
 	"github.com/pulumi/pulumi/pkg/testing/integration"
 	"github.com/pulumi/pulumi/pkg/util/contract"
@@ -221,7 +222,7 @@ func TestStackCommands(t *testing.T) {
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
-		snap, err := stack.DeserializeUntypedDeployment(&deployment)
+		snap, err := stack.DeserializeUntypedDeployment(&deployment, config.NopDecrypter)
 		if !assert.NoError(t, err) {
 			t.FailNow()
 		}
@@ -232,7 +233,7 @@ func TestStackCommands(t *testing.T) {
 			Resource: res,
 			Type:     resource.OperationTypeDeleting,
 		})
-		v2deployment := stack.SerializeDeployment(snap)
+		v2deployment := stack.SerializeDeployment(snap, config.NopDecrypter)
 		data, err := json.Marshal(&v2deployment)
 		if !assert.NoError(t, err) {
 			t.FailNow()

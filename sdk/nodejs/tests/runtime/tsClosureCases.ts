@@ -1203,8 +1203,9 @@ var __v = {};
 var __v_d_proto = {};
 __f1.prototype = __v_d_proto;
 Object.defineProperty(__v_d_proto, "constructor", { configurable: true, writable: true, value: __f1 });
-Object.defineProperty(__v_d_proto, "apply", { configurable: true, writable: true, value: __f2 });
-Object.defineProperty(__v_d_proto, "get", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d_proto, "makeSecret", { configurable: true, writable: true, value: __f2 });
+Object.defineProperty(__v_d_proto, "apply", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d_proto, "get", { configurable: true, writable: true, value: __f4 });
 var __v_d = Object.create(__v_d_proto);
 __v_d.value = 4;
 __v.d = __v_d;
@@ -1225,6 +1226,18 @@ function __f2() {
   return (function() {
     with({  }) {
 
+return function /*makeSecret*/() {
+        return this;
+    };
+
+    }
+  }).apply(undefined, undefined).apply(this, arguments);
+}
+
+function __f3() {
+  return (function() {
+    with({  }) {
+
 return function /*apply*/(func) {
         throw new Error("'apply' is not allowed from inside a cloud-callback. Use 'get' to retrieve the value of this Output directly.");
     };
@@ -1233,7 +1246,7 @@ return function /*apply*/(func) {
   }).apply(undefined, undefined).apply(this, arguments);
 }
 
-function __f3() {
+function __f4() {
   return (function() {
     with({  }) {
 
@@ -1274,8 +1287,9 @@ var __v = {};
 var __v_d1_proto = {};
 __f1.prototype = __v_d1_proto;
 Object.defineProperty(__v_d1_proto, "constructor", { configurable: true, writable: true, value: __f1 });
-Object.defineProperty(__v_d1_proto, "apply", { configurable: true, writable: true, value: __f2 });
-Object.defineProperty(__v_d1_proto, "get", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d1_proto, "makeSecret", { configurable: true, writable: true, value: __f2 });
+Object.defineProperty(__v_d1_proto, "apply", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d1_proto, "get", { configurable: true, writable: true, value: __f4 });
 var __v_d1 = Object.create(__v_d1_proto);
 __v_d1.value = 4;
 __v.d1 = __v_d1;
@@ -1306,6 +1320,18 @@ function __f2() {
   return (function() {
     with({  }) {
 
+return function /*makeSecret*/() {
+        return this;
+    };
+
+    }
+  }).apply(undefined, undefined).apply(this, arguments);
+}
+
+function __f3() {
+  return (function() {
+    with({  }) {
+
 return function /*apply*/(func) {
         throw new Error("'apply' is not allowed from inside a cloud-callback. Use 'get' to retrieve the value of this Output directly.");
     };
@@ -1314,7 +1340,7 @@ return function /*apply*/(func) {
   }).apply(undefined, undefined).apply(this, arguments);
 }
 
-function __f3() {
+function __f4() {
   return (function() {
     with({  }) {
 
@@ -1356,8 +1382,9 @@ var __v = {};
 var __v_d1_proto = {};
 __f1.prototype = __v_d1_proto;
 Object.defineProperty(__v_d1_proto, "constructor", { configurable: true, writable: true, value: __f1 });
-Object.defineProperty(__v_d1_proto, "apply", { configurable: true, writable: true, value: __f2 });
-Object.defineProperty(__v_d1_proto, "get", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d1_proto, "makeSecret", { configurable: true, writable: true, value: __f2 });
+Object.defineProperty(__v_d1_proto, "apply", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_d1_proto, "get", { configurable: true, writable: true, value: __f4 });
 var __v_d1 = Object.create(__v_d1_proto);
 __v_d1.value = 4;
 __v.d1 = __v_d1;
@@ -1385,6 +1412,18 @@ function __f2() {
   return (function() {
     with({  }) {
 
+return function /*makeSecret*/() {
+        return this;
+    };
+
+    }
+  }).apply(undefined, undefined).apply(this, arguments);
+}
+
+function __f3() {
+  return (function() {
+    with({  }) {
+
 return function /*apply*/(func) {
         throw new Error("'apply' is not allowed from inside a cloud-callback. Use 'get' to retrieve the value of this Output directly.");
     };
@@ -1393,7 +1432,7 @@ return function /*apply*/(func) {
   }).apply(undefined, undefined).apply(this, arguments);
 }
 
-function __f3() {
+function __f4() {
   return (function() {
     with({  }) {
 
@@ -1454,8 +1493,9 @@ __v.x = __v_x;
 var __v_o1_proto = {};
 __f1.prototype = __v_o1_proto;
 Object.defineProperty(__v_o1_proto, "constructor", { configurable: true, writable: true, value: __f1 });
-Object.defineProperty(__v_o1_proto, "apply", { configurable: true, writable: true, value: __f2 });
-Object.defineProperty(__v_o1_proto, "get", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_o1_proto, "makeSecret", { configurable: true, writable: true, value: __f2 });
+Object.defineProperty(__v_o1_proto, "apply", { configurable: true, writable: true, value: __f3 });
+Object.defineProperty(__v_o1_proto, "get", { configurable: true, writable: true, value: __f4 });
 var __v_o1 = Object.create(__v_o1_proto);
 var __v_o1_value = {a: 1, b: true};
 __v_o1.value = __v_o1_value;
@@ -1603,6 +1643,18 @@ function __f2() {
   return (function() {
     with({  }) {
 
+return function /*makeSecret*/() {
+        return this;
+    };
+
+    }
+  }).apply(undefined, undefined).apply(this, arguments);
+}
+
+function __f3() {
+  return (function() {
+    with({  }) {
+
 return function /*apply*/(func) {
         throw new Error("'apply' is not allowed from inside a cloud-callback. Use 'get' to retrieve the value of this Output directly.");
     };
@@ -1611,7 +1663,7 @@ return function /*apply*/(func) {
   }).apply(undefined, undefined).apply(this, arguments);
 }
 
-function __f3() {
+function __f4() {
   return (function() {
     with({  }) {
 

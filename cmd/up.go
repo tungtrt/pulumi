@@ -448,7 +448,11 @@ func isPreconfiguredEmptyStack(
 	if len(snap.Resources) != 1 {
 		return false
 	}
-	stackResource, _ := stack.GetRootStackResource(snap)
+	stackResource, _, err := stack.GetRootStackResource(snap, config.NopEncrypter)
+	if err != nil {
+		contract.IgnoreError(err)
+		return false
+	}
 	if stackResource == nil {
 		return false
 	}

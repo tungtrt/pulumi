@@ -56,6 +56,11 @@ func newStackImportCmd() *cobra.Command {
 			}
 			stackName := s.Ref().Name()
 
+			crypter, err := s.Backend().GetStackCrypter(s.Ref())
+			if err != nil {
+				return err
+			}
+
 			// Read from stdin or a specified file
 			reader := os.Stdin
 			if file != "" {
@@ -75,7 +80,7 @@ func newStackImportCmd() *cobra.Command {
 			// We do, however, now want to unmarshal the json.RawMessage into a real, typed deployment.  We do this so
 			// we can check that the deployment doesn't contain resources from a stack other than the selected one. This
 			// catches errors wherein someone imports the wrong stack's deployment (which can seriously hork things).
-			snapshot, err := stack.DeserializeUntypedDeployment(&deployment)
+			snapshot, err := stack.DeserializeUntypedDeployment(&deployment, crypter)
 			if err != nil {
 				switch err {
 				case stack.ErrDeploymentSchemaVersionTooOld:
@@ -121,7 +126,11 @@ func newStackImportCmd() *cobra.Command {
 
 				snapshot.PendingOperations = nil
 			}
-			bytes, err := json.Marshal(stack.SerializeDeployment(snapshot))
+			latest, err := stack.SerializeDeployment(snapshot, crypter)
+			if err != nil {
+				return err
+			}
+			bytes, err := json.Marshal(latest)
 			if err != nil {
 				return err
 			}

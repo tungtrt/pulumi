@@ -285,6 +285,8 @@ func filterPropertyMap(propertyMap resource.PropertyMap, debug bool) resource.Pr
 			return resource.Output{
 				Element: filterPropertyValue(t.Element),
 			}
+		case resource.Secret:
+			return "[secret]"
 		}
 
 		// Next, see if it's an array, slice, pointer or struct, and handle each accordingly.

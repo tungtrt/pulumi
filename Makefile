@@ -28,8 +28,8 @@ install::
 dist::
 	go install -ldflags "-X github.com/pulumi/pulumi/pkg/version.Version=${VERSION}" ${PROJECT}
 
-lint::
-	golangci-lint run
+#lint::
+#	golangci-lint run
 
 test_fast::
 	go test -timeout $(TEST_FAST_TIMEOUT) -count=1 -parallel ${TESTPARALLELISM} ${PROJECT_PKGS}

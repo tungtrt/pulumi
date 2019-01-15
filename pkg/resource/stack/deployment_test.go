@@ -21,6 +21,7 @@ import (
 
 	"github.com/pulumi/pulumi/pkg/apitype"
 	"github.com/pulumi/pulumi/pkg/resource"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/tokens"
 )
 
@@ -78,7 +79,8 @@ func TestDeploymentSerialization(t *testing.T) {
 		"",
 	)
 
-	dep := SerializeResource(res)
+	dep, err := SerializeResource(res, config.NopCrypter)
+	assert.NoError(t, err)
 
 	// assert some things about the deployment record:
 	assert.NotNil(t, dep)
@@ -152,7 +154,7 @@ func TestLoadTooNewDeployment(t *testing.T) {
 		Version: apitype.DeploymentSchemaVersionCurrent + 1,
 	}
 
-	deployment, err := DeserializeUntypedDeployment(untypedDeployment)
+	deployment, err := DeserializeUntypedDeployment(untypedDeployment, config.NopDecrypter)
 	assert.Nil(t, deployment)
 	assert.Error(t, err)
 	assert.Equal(t, ErrDeploymentSchemaVersionTooNew, err)
@@ -163,7 +165,7 @@ func TestLoadTooOldDeployment(t *testing.T) {
 		Version: DeploymentSchemaVersionOldestSupported - 1,
 	}
 
-	deployment, err := DeserializeUntypedDeployment(untypedDeployment)
+	deployment, err := DeserializeUntypedDeployment(untypedDeployment, config.NopDecrypter)
 	assert.Nil(t, deployment)
 	assert.Error(t, err)
 	assert.Equal(t, ErrDeploymentSchemaVersionTooOld, err)

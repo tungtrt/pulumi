@@ -19,6 +19,7 @@ import (
 
 	"github.com/pulumi/pulumi/pkg/backend"
 	"github.com/pulumi/pulumi/pkg/backend/httpstate/client"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/resource/deploy"
 	"github.com/pulumi/pulumi/pkg/resource/stack"
 )
@@ -29,6 +30,7 @@ type cloudSnapshotPersister struct {
 	update      client.UpdateIdentifier // The UpdateIdentifier for this update sequence.
 	tokenSource *tokenSource            // A token source for interacting with the service.
 	backend     *cloudBackend           // A backend for communicating with the service
+	encrypter   config.Encrypter        // The encrypter for the target stack's checkpoints
 }
 
 func (persister *cloudSnapshotPersister) Invalidate() error {
@@ -45,18 +47,22 @@ func (persister *cloudSnapshotPersister) Save(snapshot *deploy.Snapshot) error {
 	if err != nil {
 		return err
 	}
-	deployment := stack.SerializeDeployment(snapshot)
+	deployment, err := stack.SerializeDeployment(snapshot, persister.encrypter)
+	if err != nil {
+		return err
+	}
 	return persister.backend.client.PatchUpdateCheckpoint(persister.context, persister.update, deployment, token)
 }
 
 var _ backend.SnapshotPersister = (*cloudSnapshotPersister)(nil)
 
 func (cb *cloudBackend) newSnapshotPersister(ctx context.Context, update client.UpdateIdentifier,
-	tokenSource *tokenSource) *cloudSnapshotPersister {
+	tokenSource *tokenSource, encrypter config.Encrypter) *cloudSnapshotPersister {
 	return &cloudSnapshotPersister{
 		context:     ctx,
 		update:      update,
 		tokenSource: tokenSource,
 		backend:     cb,
+		encrypter:   encrypter,
 	}
 }

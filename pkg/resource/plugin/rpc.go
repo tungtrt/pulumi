@@ -126,6 +126,12 @@ func MarshalPropertyValue(v resource.PropertyValue, opts MarshalOptions) (*struc
 			return nil, err
 		}
 		return MarshalStruct(obj, opts), nil
+	} else if v.IsSecret() {
+		secret := resource.NewPropertyMapFromMap(map[string]interface{}{
+			string(resource.SigKey): resource.SecretSig,
+			"value":                 v.SecretValue().Element,
+		})
+		return MarshalPropertyValue(resource.NewObjectProperty(secret), opts)
 	} else if v.IsComputed() {
 		if opts.RejectUnknowns {
 			return nil, errors.New("unexpected unknown property value")
@@ -265,12 +271,23 @@ func UnmarshalPropertyValue(v *structpb.Value, opts MarshalOptions) (*resource.P
 			return nil, err
 		}
 
-		// Before returning it as an object, check to see if it's a known recoverable type.
+		// Look for a signature that marks an asset, archive, or secret.
 		objmap := obj.Mappable()
-		asset, isasset, err := resource.DeserializeAsset(objmap)
-		if err != nil {
-			return nil, err
-		} else if isasset {
+		sig, hasSig := objmap[string(resource.SigKey)]
+		if !hasSig {
+			// This is a weakly-typed object map.
+			m := resource.NewObjectProperty(obj)
+			return &m, nil
+		}
+
+		switch sig {
+		case resource.AssetSig:
+			asset, isasset, err := resource.DeserializeAsset(objmap)
+			if err != nil {
+				return nil, err
+			}
+			contract.Assert(isasset)
+
 			if opts.ComputeAssetHashes {
 				if err = asset.EnsureHash(); err != nil {
 					return nil, errors.Wrapf(err, "failed to compute asset hash")
@@ -278,11 +295,13 @@ func UnmarshalPropertyValue(v *structpb.Value, opts MarshalOptions) (*resource.P
 			}
 			m := resource.NewAssetProperty(asset)
 			return &m, nil
-		}
-		archive, isarchive, err := resource.DeserializeArchive(objmap)
-		if err != nil {
-			return nil, err
-		} else if isarchive {
+
+		case resource.ArchiveSig:
+			archive, isarchive, err := resource.DeserializeArchive(objmap)
+			if err != nil {
+				return nil, err
+			}
+			contract.Assert(isarchive)
 			if opts.ComputeAssetHashes {
 				if err = archive.EnsureHash(); err != nil {
 					return nil, errors.Wrapf(err, "failed to compute archive hash")
@@ -290,9 +309,19 @@ func UnmarshalPropertyValue(v *structpb.Value, opts MarshalOptions) (*resource.P
 			}
 			m := resource.NewArchiveProperty(archive)
 			return &m, nil
+
+		case resource.SecretSig:
+			logging.Infof("unmarshaling secret")
+
+			value, ok := obj["value"]
+			if !ok {
+				return nil, errors.New("malformed RPC secret: missing value")
+			}
+			s := resource.MakeSecret(value)
+			return &s, nil
+		default:
+			return nil, errors.Errorf("unrecognized signature '%v' in property", sig)
 		}
-		m := resource.NewObjectProperty(obj)
-		return &m, nil
 
 	default:
 		contract.Failf("Unrecognized structpb value kind in RPC[%s]: %v", opts.Label, reflect.TypeOf(v.Kind))

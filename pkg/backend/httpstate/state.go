@@ -247,12 +247,17 @@ func (b *cloudBackend) newUpdate(ctx context.Context, stackRef backend.StackRefe
 }
 
 func (b *cloudBackend) getSnapshot(ctx context.Context, stackRef backend.StackReference) (*deploy.Snapshot, error) {
+	decrypter, err := b.GetStackCrypter(stackRef)
+	if err != nil {
+		return nil, err
+	}
+
 	untypedDeployment, err := b.ExportDeployment(ctx, stackRef)
 	if err != nil {
 		return nil, err
 	}
 
-	snapshot, err := stack.DeserializeUntypedDeployment(untypedDeployment)
+	snapshot, err := stack.DeserializeUntypedDeployment(untypedDeployment, decrypter)
 	if err != nil {
 		return nil, err
 	}

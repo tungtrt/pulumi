@@ -120,6 +120,19 @@ func (b *localBackend) getStack(name tokens.QName) (config.Map, *deploy.Snapshot
 		return nil, nil, "", errors.New("invalid empty stack name")
 	}
 
+	stackConfigFile := b.stackConfigFile
+	if stackConfigFile == "" {
+		f, err := workspace.DetectProjectStackPath(name)
+		if err != nil {
+			return nil, nil, "", err
+		}
+		stackConfigFile = f
+	}
+	decrypter, err := symmetricCrypter(name, stackConfigFile)
+	if err != nil {
+		return nil, nil, "", err
+	}
+
 	file := b.stackPath(name)
 
 	chk, err := b.getCheckpoint(name)
@@ -128,7 +141,7 @@ func (b *localBackend) getStack(name tokens.QName) (config.Map, *deploy.Snapshot
 	}
 
 	// Materialize an actual snapshot object.
-	snapshot, err := stack.DeserializeCheckpoint(chk)
+	snapshot, err := stack.DeserializeCheckpoint(chk, decrypter)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -157,6 +170,20 @@ func (b *localBackend) getCheckpoint(stackName tokens.QName) (*apitype.Checkpoin
 
 func (b *localBackend) saveStack(name tokens.QName,
 	config map[config.Key]config.Value, snap *deploy.Snapshot) (string, error) {
+
+	stackConfigFile := b.stackConfigFile
+	if stackConfigFile == "" {
+		f, err := workspace.DetectProjectStackPath(name)
+		if err != nil {
+			return "", err
+		}
+		stackConfigFile = f
+	}
+	encrypter, err := symmetricCrypter(name, stackConfigFile)
+	if err != nil {
+		return "", err
+	}
+
 	// Make a serializable stack and then use the encoder to encode it.
 	file := b.stackPath(name)
 	m, ext := encoding.Detect(file)
@@ -166,7 +193,10 @@ func (b *localBackend) saveStack(name tokens.QName,
 	if filepath.Ext(file) == "" {
 		file = file + ext
 	}
-	chk := stack.SerializeCheckpoint(name, config, snap)
+	chk, err := stack.SerializeCheckpoint(name, config, snap, encrypter)
+	if err != nil {
+		return "", err
+	}
 	byts, err := m.Marshal(chk)
 	if err != nil {
 		return "", errors.Wrap(err, "An IO error occurred during the current operation")

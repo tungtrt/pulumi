@@ -212,11 +212,18 @@ func (c *backendClient) GetStackOutputs(ctx context.Context, name string) (resou
 	if s == nil {
 		return nil, errors.Errorf("unknown stack \"%s\"", name)
 	}
+	crypter, err := c.backend.GetStackCrypter(ref)
+	if err != nil {
+		return nil, err
+	}
 	snap, err := s.Snapshot(ctx)
 	if err != nil {
 		return nil, err
 	}
-	res, _ := stack.GetRootStackResource(snap)
+	res, _, err := stack.GetRootStackResource(snap, crypter)
+	if err != nil {
+		return nil, err
+	}
 	if res == nil {
 		return resource.PropertyMap{}, nil
 	}

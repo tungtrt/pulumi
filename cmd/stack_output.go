@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pulumi/pulumi/pkg/backend/display"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/resource/stack"
 	"github.com/pulumi/pulumi/pkg/util/cmdutil"
 )
@@ -52,7 +53,12 @@ func newStackOutputCmd() *cobra.Command {
 				return err
 			}
 
-			_, outputs := stack.GetRootStackResource(snap)
+			// TODO(pdg): configurable encryption
+
+			_, outputs, err := stack.GetRootStackResource(snap, config.NopEncrypter)
+			if err != nil {
+				return err
+			}
 			if outputs == nil {
 				outputs = make(map[string]interface{})
 			}

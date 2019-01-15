@@ -60,6 +60,7 @@ type RuntimeValidationStackInfo struct {
 	Deployment   *apitype.DeploymentV2
 	RootResource apitype.ResourceV2
 	Outputs      map[string]interface{}
+	Crypter      config.Crypter
 }
 
 // EditDir is an optional edit to apply to the example, as subsequent deployments.
@@ -383,7 +384,7 @@ func GetLogs(
 
 	var states []*resource.State
 	for _, res := range stackInfo.Deployment.Resources {
-		state, err := stack.DeserializeResource(res)
+		state, err := stack.DeserializeResource(res, stackInfo.Crypter)
 		if !assert.NoError(t, err) {
 			return nil
 		}

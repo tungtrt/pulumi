@@ -218,6 +218,12 @@ type PluginInfoV1 struct {
 	Version string               `json:"version" yaml:"version"`
 }
 
+// SecretV1 captures a secret value.
+type SecretV1 struct {
+	Sig        string `json:"4dabf18193072939515e22adb298388d" yaml:"4dabf18193072939515e22adb298388d"`
+	Ciphertext string `json:"ciphertext" yaml:"ciphertext"`
+}
+
 // ConfigValue describes a single (possibly secret) configuration value.
 type ConfigValue struct {
 	// String is either the plaintext value (for non-secrets) or the base64-encoded ciphertext (for secrets).

@@ -70,11 +70,15 @@ func UnmarshalVersionedCheckpointToLatestCheckpoint(bytes []byte) (*apitype.Chec
 }
 
 // SerializeCheckpoint turns a snapshot into a data structure suitable for serialization.
-func SerializeCheckpoint(stack tokens.QName, config config.Map, snap *deploy.Snapshot) *apitype.VersionedCheckpoint {
+func SerializeCheckpoint(stack tokens.QName, config config.Map, snap *deploy.Snapshot, encrypter config.Encrypter) (*apitype.VersionedCheckpoint, error) {
 	// If snap is nil, that's okay, we will just create an empty deployment; otherwise, serialize the whole snapshot.
 	var latest *apitype.DeploymentV2
 	if snap != nil {
-		latest = SerializeDeployment(snap)
+		l, err := SerializeDeployment(snap, encrypter)
+		if err != nil {
+			return nil, err
+		}
+		latest = l
 	}
 
 	b, err := json.Marshal(apitype.CheckpointV2{
@@ -87,15 +91,15 @@ func SerializeCheckpoint(stack tokens.QName, config config.Map, snap *deploy.Sna
 	return &apitype.VersionedCheckpoint{
 		Version:    apitype.DeploymentSchemaVersionCurrent,
 		Checkpoint: json.RawMessage(b),
-	}
+	}, nil
 }
 
 // DeserializeCheckpoint takes a serialized deployment record and returns its associated snapshot. Returns nil
 // if there have been no deployments performed on this checkpoint.
-func DeserializeCheckpoint(chkpoint *apitype.CheckpointV2) (*deploy.Snapshot, error) {
+func DeserializeCheckpoint(chkpoint *apitype.CheckpointV2, decrypter config.Decrypter) (*deploy.Snapshot, error) {
 	contract.Require(chkpoint != nil, "chkpoint")
 	if chkpoint.Latest != nil {
-		return DeserializeDeploymentV2(*chkpoint.Latest)
+		return DeserializeDeploymentV2(*chkpoint.Latest, decrypter)
 	}
 
 	return nil, nil
@@ -103,13 +107,17 @@ func DeserializeCheckpoint(chkpoint *apitype.CheckpointV2) (*deploy.Snapshot, er
 
 // GetRootStackResource returns the root stack resource from a given snapshot, or nil if not found.  If the stack
 // exists, its output properties, if any, are also returned in the resulting map.
-func GetRootStackResource(snap *deploy.Snapshot) (*resource.State, map[string]interface{}) {
+func GetRootStackResource(snap *deploy.Snapshot, encrypter config.Encrypter) (*resource.State, map[string]interface{}, error) {
 	if snap != nil {
 		for _, res := range snap.Resources {
 			if res.Type == resource.RootStackType {
-				return res, SerializeResource(res).Outputs
+				serialized, err := SerializeResource(res, encrypter)
+				if err != nil {
+					return nil, nil, err
+				}
+				return res, serialized.Outputs, nil
 			}
 		}
 	}
-	return nil, nil
+	return nil, nil, nil
 }

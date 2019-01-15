@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/dustin/go-humanize"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 
 	"github.com/pulumi/pulumi/pkg/backend/display"
 	"github.com/pulumi/pulumi/pkg/backend/httpstate"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/resource/stack"
 	"github.com/pulumi/pulumi/pkg/util/cmdutil"
 )
@@ -135,8 +136,15 @@ func newStackCmd() *cobra.Command {
 					Prefix:  "    ",
 				})
 
+				// TODO(pdg): configurable encryption
+				encrypter := config.NopEncrypter
+
 				// Print out the output properties for the stack, if present.
-				if res, outputs := stack.GetRootStackResource(snap); res != nil {
+				res, outputs, err := stack.GetRootStackResource(snap, encrypter)
+				if err != nil {
+					return err
+				}
+				if res != nil {
 					fmt.Printf("\n")
 					printStackOutputs(outputs)
 				}

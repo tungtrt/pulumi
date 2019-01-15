@@ -20,11 +20,14 @@ import (
 	"reflect"
 
 	"github.com/blang/semver"
+	"github.com/pkg/errors"
 	"github.com/pulumi/pulumi/pkg/apitype"
 	"github.com/pulumi/pulumi/pkg/apitype/migrate"
 	"github.com/pulumi/pulumi/pkg/resource"
+	"github.com/pulumi/pulumi/pkg/resource/config"
 	"github.com/pulumi/pulumi/pkg/resource/deploy"
 	"github.com/pulumi/pulumi/pkg/util/contract"
+	"github.com/pulumi/pulumi/pkg/util/logging"
 	"github.com/pulumi/pulumi/pkg/workspace"
 )
 
@@ -47,7 +50,7 @@ var (
 )
 
 // SerializeDeployment serializes an entire snapshot as a deploy record.
-func SerializeDeployment(snap *deploy.Snapshot) *apitype.DeploymentV2 {
+func SerializeDeployment(snap *deploy.Snapshot, encrypter config.Encrypter) (*apitype.DeploymentV2, error) {
 	contract.Require(snap != nil, "snap")
 
 	// Capture the version information into a manifest.
@@ -72,25 +75,33 @@ func SerializeDeployment(snap *deploy.Snapshot) *apitype.DeploymentV2 {
 	// Serialize all vertices and only include a vertex section if non-empty.
 	var resources []apitype.ResourceV2
 	for _, res := range snap.Resources {
-		resources = append(resources, SerializeResource(res))
+		sr, err := SerializeResource(res, encrypter)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, sr)
 	}
 
 	var operations []apitype.OperationV1
 	for _, op := range snap.PendingOperations {
-		operations = append(operations, SerializeOperation(op))
+		so, err := SerializeOperation(op, encrypter)
+		if err != nil {
+			return nil, err
+		}
+		operations = append(operations, so)
 	}
 
 	return &apitype.DeploymentV2{
 		Manifest:          manifest,
 		Resources:         resources,
 		PendingOperations: operations,
-	}
+	}, nil
 }
 
 // DeserializeUntypedDeployment deserializes an untyped deployment and produces a `deploy.Snapshot`
 // from it. DeserializeDeployment will return an error if the untyped deployment's version is
 // not within the range `DeploymentSchemaVersionCurrent` and `DeploymentSchemaVersionOldestSupported`.
-func DeserializeUntypedDeployment(deployment *apitype.UntypedDeployment) (*deploy.Snapshot, error) {
+func DeserializeUntypedDeployment(deployment *apitype.UntypedDeployment, decrypter config.Decrypter) (*deploy.Snapshot, error) {
 	contract.Require(deployment != nil, "deployment")
 	switch {
 	case deployment.Version > apitype.DeploymentSchemaVersionCurrent:
@@ -116,11 +127,11 @@ func DeserializeUntypedDeployment(deployment *apitype.UntypedDeployment) (*deplo
 		contract.Failf("unrecognized version: %d", deployment.Version)
 	}
 
-	return DeserializeDeploymentV2(v2deployment)
+	return DeserializeDeploymentV2(v2deployment, decrypter)
 }
 
 // DeserializeDeploymentV2 deserializes a typed DeploymentV2 into a `deploy.Snapshot`.
-func DeserializeDeploymentV2(deployment apitype.DeploymentV2) (*deploy.Snapshot, error) {
+func DeserializeDeploymentV2(deployment apitype.DeploymentV2, decrypter config.Decrypter) (*deploy.Snapshot, error) {
 	// Unpack the versions.
 	manifest := deploy.Manifest{
 		Time:    deployment.Manifest.Time,
@@ -146,7 +157,7 @@ func DeserializeDeploymentV2(deployment apitype.DeploymentV2) (*deploy.Snapshot,
 	// For every serialized resource vertex, create a ResourceDeployment out of it.
 	var resources []*resource.State
 	for _, res := range deployment.Resources {
-		desres, err := DeserializeResource(res)
+		desres, err := DeserializeResource(res, decrypter)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +166,7 @@ func DeserializeDeploymentV2(deployment apitype.DeploymentV2) (*deploy.Snapshot,
 
 	var ops []resource.Operation
 	for _, op := range deployment.PendingOperations {
-		desop, err := DeserializeOperation(op)
+		desop, err := DeserializeOperation(op, decrypter)
 		if err != nil {
 			return nil, err
 		}
@@ -166,18 +177,26 @@ func DeserializeDeploymentV2(deployment apitype.DeploymentV2) (*deploy.Snapshot,
 }
 
 // SerializeResource turns a resource into a structure suitable for serialization.
-func SerializeResource(res *resource.State) apitype.ResourceV2 {
+func SerializeResource(res *resource.State, encrypter config.Encrypter) (apitype.ResourceV2, error) {
 	contract.Assert(res != nil)
 	contract.Assertf(string(res.URN) != "", "Unexpected empty resource resource.URN")
 
 	// Serialize all input and output properties recursively, and add them if non-empty.
 	var inputs map[string]interface{}
 	if inp := res.Inputs; inp != nil {
-		inputs = SerializeProperties(inp)
+		i, err := SerializeProperties(inp, encrypter)
+		if err != nil {
+			return apitype.ResourceV2{}, err
+		}
+		inputs = i
 	}
 	var outputs map[string]interface{}
 	if outp := res.Outputs; outp != nil {
-		outputs = SerializeProperties(outp)
+		o, err := SerializeProperties(outp, encrypter)
+		if err != nil {
+			return apitype.ResourceV2{}, err
+		}
+		outputs = o
 	}
 
 	return apitype.ResourceV2{
@@ -194,34 +213,41 @@ func SerializeResource(res *resource.State) apitype.ResourceV2 {
 		Dependencies: res.Dependencies,
 		InitErrors:   res.InitErrors,
 		Provider:     res.Provider,
-	}
+	}, nil
 }
 
-func SerializeOperation(op resource.Operation) apitype.OperationV1 {
-	res := SerializeResource(op.Resource)
+func SerializeOperation(op resource.Operation, encrypter config.Encrypter) (apitype.OperationV1, error) {
+	res, err := SerializeResource(op.Resource, encrypter)
+	if err != nil {
+		return apitype.OperationV1{}, err
+	}
 	return apitype.OperationV1{
 		Resource: res,
 		Type:     apitype.OperationType(op.Type),
-	}
+	}, nil
 }
 
 // SerializeProperties serializes a resource property bag so that it's suitable for serialization.
-func SerializeProperties(props resource.PropertyMap) map[string]interface{} {
+func SerializeProperties(props resource.PropertyMap, encrypter config.Encrypter) (map[string]interface{}, error) {
 	dst := make(map[string]interface{})
 	for _, k := range props.StableKeys() {
-		if v := SerializePropertyValue(props[k]); v != nil {
+		v, err := SerializePropertyValue(props[k], encrypter)
+		if err != nil {
+			return nil, err
+		}
+		if v != nil {
 			dst[string(k)] = v
 		}
 	}
-	return dst
+	return dst, nil
 }
 
 // SerializePropertyValue serializes a resource property value so that it's suitable for serialization.
-func SerializePropertyValue(prop resource.PropertyValue) interface{} {
+func SerializePropertyValue(prop resource.PropertyValue, encrypter config.Encrypter) (interface{}, error) {
 	// Skip nulls and "outputs"; the former needn't be serialized, and the latter happens if there is an output
 	// that hasn't materialized (either because we're serializing inputs or the provider didn't give us the value).
 	if prop.IsComputed() || !prop.HasValue() {
-		return nil
+		return nil, nil
 	}
 
 	// For arrays, make sure to recurse.
@@ -229,35 +255,63 @@ func SerializePropertyValue(prop resource.PropertyValue) interface{} {
 		srcarr := prop.ArrayValue()
 		dstarr := make([]interface{}, len(srcarr))
 		for i, elem := range prop.ArrayValue() {
-			dstarr[i] = SerializePropertyValue(elem)
+			el, err := SerializePropertyValue(elem, encrypter)
+			if err != nil {
+				return nil, err
+			}
+			dstarr[i] = el
 		}
-		return dstarr
+		return dstarr, nil
 	}
 
 	// Also for objects, recurse and use naked properties.
 	if prop.IsObject() {
-		return SerializeProperties(prop.ObjectValue())
+		return SerializeProperties(prop.ObjectValue(), encrypter)
 	}
 
 	// For assets, we need to serialize them a little carefully, so we can recover them afterwards.
 	if prop.IsAsset() {
-		return prop.AssetValue().Serialize()
+		return prop.AssetValue().Serialize(), nil
 	} else if prop.IsArchive() {
-		return prop.ArchiveValue().Serialize()
+		return prop.ArchiveValue().Serialize(), nil
+	}
+
+	// For secrets, we serialize the element, dump it to JSON, encrypt the result, and return a specially-shaped
+	// secret.
+	if prop.IsSecret() {
+		elem, err := SerializePropertyValue(prop.SecretValue().Element, config.NopCrypter)
+		if err != nil {
+			return nil, err
+		}
+
+		text, err := json.Marshal(elem)
+		if err != nil {
+			return nil, err
+		}
+
+		ciphertext, err := encrypter.EncryptValue(string(text))
+		if err != nil {
+			return nil, err
+		}
+
+		return apitype.SecretV1{
+			Sig:        resource.SecretSig,
+			Ciphertext: ciphertext,
+		}, nil
 	}
 
 	// All others are returned as-is.
-	return prop.V
+	return prop.V, nil
 }
 
 // DeserializeResource turns a serialized resource back into its usual form.
-func DeserializeResource(res apitype.ResourceV2) (*resource.State, error) {
+func DeserializeResource(res apitype.ResourceV2, decrypter config.Decrypter) (*resource.State, error) {
 	// Deserialize the resource properties, if they exist.
-	inputs, err := DeserializeProperties(res.Inputs)
+	inputs, err := DeserializeProperties(res.Inputs, decrypter)
 	if err != nil {
 		return nil, err
 	}
-	outputs, err := DeserializeProperties(res.Outputs)
+	outputs, err := DeserializeProperties(res.Outputs, decrypter)
 	if err != nil {
 		return nil, err
 	}
@@ -267,8 +321,8 @@ func DeserializeResource(res apitype.ResourceV2) (*resource.State, error) {
 		inputs, outputs, res.Parent, res.Protect, res.External, res.Dependencies, res.InitErrors, res.Provider), nil
 }
 
-func DeserializeOperation(op apitype.OperationV1) (resource.Operation, error) {
-	res, err := DeserializeResource(op.Resource)
+func DeserializeOperation(op apitype.OperationV1, decrypter config.Decrypter) (resource.Operation, error) {
+	res, err := DeserializeResource(op.Resource, decrypter)
 	if err != nil {
 		return resource.Operation{}, err
 	}
@@ -276,10 +330,10 @@ func DeserializeOperation(op apitype.OperationV1) (resource.Operation, error) {
 }
 
 // DeserializeProperties deserializes an entire map of deploy properties into a resource property map.
-func DeserializeProperties(props map[string]interface{}) (resource.PropertyMap, error) {
+func DeserializeProperties(props map[string]interface{}, decrypter config.Decrypter) (resource.PropertyMap, error) {
 	result := make(resource.PropertyMap)
 	for k, prop := range props {
-		desprop, err := DeserializePropertyValue(prop)
+		desprop, err := DeserializePropertyValue(prop, decrypter)
 		if err != nil {
 			return nil, err
 		}
@@ -289,7 +343,7 @@ func DeserializeProperties(props map[string]interface{}) (resource.PropertyMap, 
 }
 
 // DeserializePropertyValue deserializes a single deploy property into a resource property value.
-func DeserializePropertyValue(v interface{}) (resource.PropertyValue, error) {
+func DeserializePropertyValue(v interface{}, decrypter config.Decrypter) (resource.PropertyValue, error) {
 	if v != nil {
 		switch w := v.(type) {
 		case bool:
@@ -301,7 +355,7 @@ func DeserializePropertyValue(v interface{}) (resource.PropertyValue, error) {
 		case []interface{}:
 			var arr []resource.PropertyValue
 			for _, elem := range w {
-				ev, err := DeserializePropertyValue(elem)
+				ev, err := DeserializePropertyValue(elem, decrypter)
 				if err != nil {
 					return resource.PropertyValue{}, err
 				}
@@ -309,26 +363,57 @@ func DeserializePropertyValue(v interface{}) (resource.PropertyValue, error) {
 			}
 			return resource.NewArrayProperty(arr), nil
 		case map[string]interface{}:
-			obj, err := DeserializeProperties(w)
+			obj, err := DeserializeProperties(w, decrypter)
 			if err != nil {
 				return resource.PropertyValue{}, err
 			}
-			// This could be an asset or archive; if so, recover its type.
+
+			// Look for a signature that marks an asset, archive, or secret.
 			objmap := obj.Mappable()
-			asset, isasset, err := resource.DeserializeAsset(objmap)
-			if err != nil {
-				return resource.PropertyValue{}, err
-			} else if isasset {
+			sig, hasSig := objmap[string(resource.SigKey)]
+			if !hasSig {
+				// This is a weakly-typed object map.
+				return resource.NewObjectProperty(obj), nil
+			}
+
+			switch sig {
+			case resource.AssetSig:
+				asset, isAsset, err := resource.DeserializeAsset(objmap)
+				if err != nil {
+					return resource.PropertyValue{}, err
+				}
+				contract.Assert(isAsset)
 				return resource.NewAssetProperty(asset), nil
-			}
-			archive, isarchive, err := resource.DeserializeArchive(objmap)
-			if err != nil {
-				return resource.PropertyValue{}, err
-			} else if isarchive {
+			case resource.ArchiveSig:
+				archive, isArchive, err := resource.DeserializeArchive(objmap)
+				if err != nil {
+					return resource.PropertyValue{}, err
+				}
+				contract.Assert(isArchive)
 				return resource.NewArchiveProperty(archive), nil
+			case resource.SecretSig:
+				ciphertext, ok := objmap["ciphertext"].(string)
+				if !ok {
+					return resource.PropertyValue{}, errors.New("malformed secret value: missing ciphertext")
+				}
+				logging.Infof("decrypting secret: %v", ciphertext)
+				plaintext, err := decrypter.DecryptValue(ciphertext)
+				if err != nil {
+					return resource.PropertyValue{}, err
+				}
+				logging.Infof("deserializing secret: %v", plaintext)
+				var elem interface{}
+				if err := json.Unmarshal([]byte(plaintext), &elem); err != nil {
+					return resource.PropertyValue{}, err
+				}
+				ev, err := DeserializePropertyValue(elem, config.NopDecrypter)
+				if err != nil {
+					return resource.PropertyValue{}, err
+				}
+				return resource.MakeSecret(ev), nil
+			default:
+				return resource.PropertyValue{}, errors.Errorf("unrecognized signature '%v' in property", sig)
 			}
-			// Otherwise, it's just a weakly typed object map.
-			return resource.NewObjectProperty(obj), nil
 		default:
 			contract.Failf("Unrecognized property type: %v", reflect.ValueOf(v))
 		}
