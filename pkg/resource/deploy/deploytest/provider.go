@@ -122,7 +122,7 @@ func (prov *Provider) Diff(urn resource.URN, id resource.ID,
 func (prov *Provider) Update(urn resource.URN, id resource.ID,
 	olds resource.PropertyMap, news resource.PropertyMap) (resource.PropertyMap, resource.Status, error) {
 	if prov.UpdateF == nil {
-		return resource.PropertyMap{}, resource.StatusOK, nil
+		return olds, resource.StatusOK, nil
 	}
 	return prov.UpdateF(urn, id, olds, news)
 }
@@ -137,7 +137,7 @@ func (prov *Provider) Delete(urn resource.URN,
 func (prov *Provider) Read(urn resource.URN, id resource.ID,
 	props resource.PropertyMap) (resource.PropertyMap, resource.Status, error) {
 	if prov.ReadF == nil {
-		return resource.PropertyMap{}, resource.StatusUnknown, nil
+		return props, resource.StatusOK, nil
 	}
 	return prov.ReadF(urn, id, props)
 }

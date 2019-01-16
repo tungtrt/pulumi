@@ -214,6 +214,10 @@ export const specialAssetSig = "c44067f5952c0a294b673a41bacd8c17";
  * specialArchiveSig is a randomly assigned hash used to identify archives in maps.  See pkg/resource/asset.go.
  */
 export const specialArchiveSig = "0def7320c3a5731c473e5ecbe6d01bc7";
+/**
+ * specialSecretSig is a randomly assigned hash used to identify secrets in maps.  See pkg/resource/properties.go.
+ */
+export const specialSecretSig = "1b47061264138c4ac30d75fd1eb44270";
 
 /**
  * serializeProperty serializes properties deeply.  This understands how to wait on any unresolved promises, as
@@ -392,6 +396,12 @@ export function deserializeProperty(prop: any): any {
                     else {
                         throw new Error("Invalid archive encountered when unmarshaling resource property");
                     }
+                case specialSecretSig:
+                    // TODO [pulumi/pulumi#397]: retain these as first-class secrets
+                    if (prop["value"] !== undefined) {
+                        return deserializeProperty(prop["value"]);
+                    }
+                    throw new Error("Invalid secret encountered when unmarshaling resource property");
                 default:
                     throw new Error(`Unrecognized signature '${sig}' when unmarshaling resource property`);
             }

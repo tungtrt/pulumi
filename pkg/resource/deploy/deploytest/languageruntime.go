@@ -25,16 +25,34 @@ import (
 
 type ProgramFunc func(runInfo plugin.RunInfo, monitor *ResourceMonitor) error
 
-func NewLanguageRuntime(program ProgramFunc, requiredPlugins ...workspace.PluginInfo) plugin.LanguageRuntime {
-	return &languageRuntime{
-		requiredPlugins: requiredPlugins,
-		program:         program,
+type LanguageRuntimeOption func(*languageRuntime)
+
+func RequiredPlugin(info workspace.PluginInfo) LanguageRuntimeOption {
+	return func(r *languageRuntime) {
+		r.requiredPlugins = append(r.requiredPlugins, info)
 	}
+}
+
+func EnableSecrets(enable bool) LanguageRuntimeOption {
+	return func(r *languageRuntime) {
+		r.enableSecrets = enable
+	}
+}
+
+func NewLanguageRuntime(program ProgramFunc, options ...LanguageRuntimeOption) plugin.LanguageRuntime {
+	r := &languageRuntime{
+		program: program,
+	}
+	for _, o := range options {
+		o(r)
+	}
+	return r
 }
 
 type languageRuntime struct {
 	requiredPlugins []workspace.PluginInfo
 	program         ProgramFunc
+	enableSecrets   bool
 }
 
 func (p *languageRuntime) Close() error {
@@ -58,7 +76,7 @@ func (p *languageRuntime) Run(info plugin.RunInfo) (string, error) {
 	// Run the program.
 	done := make(chan error)
 	go func() {
-		done <- p.program(info, &ResourceMonitor{resmon: resmon})
+		done <- p.program(info, &ResourceMonitor{resmon: resmon, enableSecrets: p.enableSecrets})
 	}()
 	if progerr := <-done; progerr != nil {
 		return progerr.Error(), nil

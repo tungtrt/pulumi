@@ -27,7 +27,7 @@ import (
 )
 
 // marshalInputs turns resource property inputs into a gRPC struct suitable for marshaling.
-func marshalInputs(props map[string]interface{}) (*structpb.Struct, []URN, error) {
+func marshalInputs(props map[string]interface{}, keepSecrets bool) (*structpb.Struct, []URN, error) {
 	var depURNs []URN
 	pmap := make(map[string]interface{})
 	for key := range props {
@@ -52,7 +52,7 @@ func marshalInputs(props map[string]interface{}) (*structpb.Struct, []URN, error
 	// Marshal all properties for the RPC call.
 	m, err := plugin.MarshalProperties(
 		resource.NewPropertyMapFromMap(pmap),
-		plugin.MarshalOptions{KeepUnknowns: true},
+		plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: keepSecrets},
 	)
 	return m, depURNs, err
 }
@@ -195,7 +195,7 @@ func marshalInputOutput(out *Output) (interface{}, []Resource, error) {
 
 // unmarshalOutputs unmarshals all the outputs into a simple map.
 func unmarshalOutputs(outs *structpb.Struct) (map[string]interface{}, error) {
-	outprops, err := plugin.UnmarshalProperties(outs, plugin.MarshalOptions{})
+	outprops, err := plugin.UnmarshalProperties(outs, plugin.MarshalOptions{KeepSecrets: true})
 	if err != nil {
 		return nil, err
 	}

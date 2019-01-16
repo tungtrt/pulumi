@@ -2392,3 +2392,64 @@ func TestLoadFailureShutdown(t *testing.T) {
 	close(release)
 	<-done
 }
+
+// Tests the backwards-compatibility features for secret property values
+func TestSecretsBackCompat(t *testing.T) {
+	enableSecrets := false
+
+	loaders := []*deploytest.ProviderLoader{
+		deploytest.NewProviderLoader("pkgA", semver.MustParse("1.0.0"), func() (plugin.Provider, error) {
+			return &deploytest.Provider{
+				CreateF: func(urn resource.URN,
+					inputs resource.PropertyMap) (resource.ID, resource.PropertyMap, resource.Status, error) {
+
+					// If secrets are disabled, we expect to see no secret values in the inputs. Otherwise, we expect
+					// to see exactly one.
+					if !enableSecrets {
+						assert.True(t, inputs["secret"].IsString())
+					} else {
+						assert.True(t, inputs["secret"].IsSecret())
+					}
+
+					// We always return a secret property. If the back-compat handling in the code that communicates
+					// with the language plugin is working, then this secret will be replaced with its wrapped value.
+					state := resource.PropertyMap{
+						"secret": resource.MakeSecret(resource.NewStringProperty("secret")),
+					}
+					return resource.ID("0"), state, resource.StatusOK, nil
+				},
+			}, nil
+		}),
+	}
+
+	programFunc := func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
+		// The engine should always attempt to enable secrets.
+		assert.True(t, info.EnableSecrets)
+
+		_, _, state, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, "", false, nil, "",
+			resource.PropertyMap{
+				"secret": resource.MakeSecret(resource.NewStringProperty("secret")),
+			})
+		assert.NoError(t, err)
+
+		if !enableSecrets {
+			assert.True(t, state["secret"].IsString())
+		} else {
+			assert.True(t, state["secret"].IsSecret())
+		}
+
+		return nil
+	}
+
+	program := deploytest.NewLanguageRuntime(programFunc, deploytest.EnableSecrets(enableSecrets))
+	p := &TestPlan{
+		Options: UpdateOptions{host: deploytest.NewPluginHost(nil, nil, program, loaders...)},
+		Steps:   MakeBasicLifecycleSteps(t, 2),
+	}
+	p.Run(t, nil)
+
+	enableSecrets = true
+	program = deploytest.NewLanguageRuntime(programFunc, deploytest.EnableSecrets(enableSecrets))
+	p.Options.host = deploytest.NewPluginHost(nil, nil, program, loaders...)
+	p.Run(t, nil)
+}

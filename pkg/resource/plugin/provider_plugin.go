@@ -199,13 +199,19 @@ func (p *provider) Check(urn resource.URN,
 		return news, nil, nil
 	}
 
-	molds, err := MarshalProperties(olds, MarshalOptions{Label: fmt.Sprintf("%s.olds", label),
-		KeepUnknowns: allowUnknowns})
+	molds, err := MarshalProperties(olds, MarshalOptions{
+		Label:        fmt.Sprintf("%s.olds", label),
+		KeepUnknowns: allowUnknowns,
+		KeepSecrets:  p.enableSecrets,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
-	mnews, err := MarshalProperties(news, MarshalOptions{Label: fmt.Sprintf("%s.news", label),
-		KeepUnknowns: allowUnknowns})
+	mnews, err := MarshalProperties(news, MarshalOptions{
+		Label:        fmt.Sprintf("%s.news", label),
+		KeepUnknowns: allowUnknowns,
+		KeepSecrets:  p.enableSecrets,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -225,7 +231,11 @@ func (p *provider) Check(urn resource.URN,
 	var inputs resource.PropertyMap
 	if ins := resp.GetInputs(); ins != nil {
 		inputs, err = UnmarshalProperties(ins, MarshalOptions{
-			Label: fmt.Sprintf("%s.inputs", label), KeepUnknowns: allowUnknowns, RejectUnknowns: !allowUnknowns})
+			Label:          fmt.Sprintf("%s.inputs", label),
+			KeepUnknowns:   allowUnknowns,
+			RejectUnknowns: !allowUnknowns,
+			KeepSecrets:    true,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -269,12 +279,19 @@ func (p *provider) Diff(urn resource.URN, id resource.ID,
 	}
 
 	molds, err := MarshalProperties(olds, MarshalOptions{
-		Label: fmt.Sprintf("%s.olds", label), ElideAssetContents: true, KeepUnknowns: allowUnknowns})
+		Label:              fmt.Sprintf("%s.olds", label),
+		ElideAssetContents: true,
+		KeepUnknowns:       allowUnknowns,
+		KeepSecrets:        p.enableSecrets,
+	})
 	if err != nil {
 		return DiffResult{}, err
 	}
-	mnews, err := MarshalProperties(news, MarshalOptions{Label: fmt.Sprintf("%s.news", label),
-		KeepUnknowns: allowUnknowns})
+	mnews, err := MarshalProperties(news, MarshalOptions{
+		Label:        fmt.Sprintf("%s.news", label),
+		KeepUnknowns: allowUnknowns,
+		KeepSecrets:  p.enableSecrets,
+	})
 	if err != nil {
 		return DiffResult{}, err
 	}
@@ -320,7 +337,10 @@ func (p *provider) Create(urn resource.URN, props resource.PropertyMap) (resourc
 	label := fmt.Sprintf("%s.Create(%s)", p.label(), urn)
 	logging.V(7).Infof("%s executing (#props=%v)", label, len(props))
 
-	mprops, err := MarshalProperties(props, MarshalOptions{Label: fmt.Sprintf("%s.inputs", label)})
+	mprops, err := MarshalProperties(props, MarshalOptions{
+		Label:       fmt.Sprintf("%s.inputs", label),
+		KeepSecrets: p.enableSecrets,
+	})
 	if err != nil {
 		return "", nil, resource.StatusOK, err
 	}
@@ -361,7 +381,10 @@ func (p *provider) Create(urn resource.URN, props resource.PropertyMap) (resourc
 	}
 
 	outs, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label:          fmt.Sprintf("%s.outputs", label),
+		RejectUnknowns: true,
+		KeepSecrets:    true,
+	})
 	if err != nil {
 		return "", nil, resourceStatus, err
 	}
@@ -396,7 +419,11 @@ func (p *provider) Read(
 	}
 
 	// Marshal the input state so we can perform the RPC.
-	marshaled, err := MarshalProperties(props, MarshalOptions{Label: label, ElideAssetContents: true})
+	marshaled, err := MarshalProperties(props, MarshalOptions{
+		Label:              label,
+		ElideAssetContents: true,
+		KeepSecrets:        p.enableSecrets,
+	})
 	if err != nil {
 		return nil, resource.StatusUnknown, err
 	}
@@ -434,7 +461,10 @@ func (p *provider) Read(
 
 	// Finally, unmarshal the resulting state properties and return them.
 	results, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label:          fmt.Sprintf("%s.outputs", label),
+		RejectUnknowns: true,
+		KeepSecrets:    true,
+	})
 	if err != nil {
 		return nil, resourceStatus, err
 	}
@@ -455,11 +485,17 @@ func (p *provider) Update(urn resource.URN, id resource.ID,
 	logging.V(7).Infof("%s executing (#olds=%v,#news=%v)", label, len(olds), len(news))
 
 	molds, err := MarshalProperties(olds, MarshalOptions{
-		Label: fmt.Sprintf("%s.olds", label), ElideAssetContents: true})
+		Label:              fmt.Sprintf("%s.olds", label),
+		ElideAssetContents: true,
+		KeepSecrets:        p.enableSecrets,
+	})
 	if err != nil {
 		return nil, resource.StatusOK, err
 	}
-	mnews, err := MarshalProperties(news, MarshalOptions{Label: fmt.Sprintf("%s.news", label)})
+	mnews, err := MarshalProperties(news, MarshalOptions{
+		Label:       fmt.Sprintf("%s.news", label),
+		KeepSecrets: p.enableSecrets,
+	})
 	if err != nil {
 		return nil, resource.StatusOK, err
 	}
@@ -495,7 +531,10 @@ func (p *provider) Update(urn resource.URN, id resource.ID,
 	}
 
 	outs, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label:          fmt.Sprintf("%s.outputs", label),
+		RejectUnknowns: true,
+		KeepSecrets:    true,
+	})
 	if err != nil {
 		return nil, resourceStatus, err
 	}
@@ -515,7 +554,11 @@ func (p *provider) Delete(urn resource.URN, id resource.ID, props resource.Prope
 	label := fmt.Sprintf("%s.Delete(%s,%s)", p.label(), urn, id)
 	logging.V(7).Infof("%s executing (#props=%d)", label, len(props))
 
-	mprops, err := MarshalProperties(props, MarshalOptions{Label: label, ElideAssetContents: true})
+	mprops, err := MarshalProperties(props, MarshalOptions{
+		Label:              label,
+		ElideAssetContents: true,
+		KeepSecrets:        p.enableSecrets,
+	})
 	if err != nil {
 		return resource.StatusOK, err
 	}
@@ -562,7 +605,10 @@ func (p *provider) Invoke(tok tokens.ModuleMember, args resource.PropertyMap) (r
 		return resource.PropertyMap{}, nil, nil
 	}
 
-	margs, err := MarshalProperties(args, MarshalOptions{Label: fmt.Sprintf("%s.args", label)})
+	margs, err := MarshalProperties(args, MarshalOptions{
+		Label:       fmt.Sprintf("%s.args", label),
+		KeepSecrets: p.enableSecrets,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -576,7 +622,10 @@ func (p *provider) Invoke(tok tokens.ModuleMember, args resource.PropertyMap) (r
 
 	// Unmarshal any return values.
 	ret, err := UnmarshalProperties(resp.GetReturn(), MarshalOptions{
-		Label: fmt.Sprintf("%s.returns", label), RejectUnknowns: true})
+		Label:          fmt.Sprintf("%s.returns", label),
+		RejectUnknowns: true,
+		KeepSecrets:    true,
+	})
 	if err != nil {
 		return nil, nil, err
 	}

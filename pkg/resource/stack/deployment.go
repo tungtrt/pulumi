@@ -246,6 +246,12 @@ func SerializePropertyValue(prop resource.PropertyValue) interface{} {
 		return prop.ArchiveValue().Serialize()
 	}
 
+	// We replace secrets with the value they wrap.
+	// TODO [pulumi/pulumi#1867]: encrypt the wrapped value here.
+	if prop.IsSecret() {
+		return SerializePropertyValue(prop.SecretValue().Element)
+	}
+
 	// All others are returned as-is.
 	return prop.V
 }
@@ -309,6 +315,8 @@ func DeserializePropertyValue(v interface{}) (resource.PropertyValue, error) {
 			}
 			return resource.NewArrayProperty(arr), nil
 		case map[string]interface{}:
+			// TODO [pulumi/pulumi#1867]: deserialize secrets here.
+
 			obj, err := DeserializeProperties(w)
 			if err != nil {
 				return resource.PropertyValue{}, err

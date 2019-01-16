@@ -137,7 +137,7 @@ func (ctx *Context) Invoke(tok string, args map[string]interface{}, opts ...Invo
 
 	// Serialize arguments, first by awaiting them, and then marshaling them to the requisite gRPC values.
 	// TODO[pulumi/pulumi#1483]: feels like we should be propagating dependencies to the outputs, instead of ignoring.
-	rpcArgs, _, err := marshalInputs(args)
+	rpcArgs, _, err := marshalInputs(args, ctx.info.EnableSecrets)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling arguments")
 	}
@@ -423,7 +423,7 @@ func (ctx *Context) prepareResourceInputs(props map[string]interface{}, opts ...
 	}
 
 	// Serialize all properties, first by awaiting them, and then marshaling them to the requisite gRPC values.
-	rpcProps, rpcDeps, err := marshalInputs(props)
+	rpcProps, rpcDeps, err := marshalInputs(props, ctx.info.EnableSecrets)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling properties")
 	}
@@ -598,7 +598,7 @@ var _ ProviderResource = (*ResourceState)(nil)
 
 // RegisterResourceOutputs completes the resource registration, attaching an optional set of computed outputs.
 func (ctx *Context) RegisterResourceOutputs(urn URN, outs map[string]interface{}) error {
-	outsMarshalled, _, err := marshalInputs(outs)
+	outsMarshalled, _, err := marshalInputs(outs, ctx.info.EnableSecrets)
 	if err != nil {
 		return errors.Wrap(err, "marshaling outputs")
 	}
