@@ -79,6 +79,7 @@ export function readResource(res: Resource, t: string, name: string, props: Inpu
         req.setProvider(resop.providerRef);
         req.setProperties(gstruct.Struct.fromJavaScript(resop.serializedProps));
         req.setDependenciesList(Array.from(resop.dependencies));
+        req.setEnablesecrets(true);
 
         // Now run the operation, serializing the invocation if necessary.
         const opLabel = `monitor.readResource(${label})`;
@@ -135,6 +136,7 @@ export function registerResource(res: Resource, t: string, name: string, custom:
         req.setProtect(opts.protect);
         req.setProvider(resop.providerRef);
         req.setDependenciesList(Array.from(resop.dependencies));
+        req.setEnablesecrets(true);
 
         // Now run the operation, serializing the invocation if necessary.
         const opLabel = `monitor.registerResource(${label})`;

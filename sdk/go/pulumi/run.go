@@ -107,13 +107,14 @@ type RunFunc func(ctx *Context) error
 
 // RunInfo contains all the metadata about a run request.
 type RunInfo struct {
-	Project     string
-	Stack       string
-	Config      map[string]string
-	Parallel    int
-	DryRun      bool
-	MonitorAddr string
-	EngineAddr  string
+	Project       string
+	Stack         string
+	Config        map[string]string
+	Parallel      int
+	DryRun        bool
+	MonitorAddr   string
+	EngineAddr    string
+	EnableSecrets bool
 }
 
 // getEnvInfo reads various program information from the process environment.
@@ -121,6 +122,7 @@ func getEnvInfo() RunInfo {
 	// Most of the variables are just strings, and we can read them directly.  A few of them require more parsing.
 	parallel, _ := strconv.Atoi(os.Getenv(EnvParallel))
 	dryRun, _ := strconv.ParseBool(os.Getenv(EnvDryRun))
+	enableSecrets, _ := strconv.ParseBool(os.Getenv(EnvEnableSecrets))
 
 	var config map[string]string
 	if cfg := os.Getenv(EnvConfig); cfg != "" {
@@ -128,13 +130,14 @@ func getEnvInfo() RunInfo {
 	}
 
 	return RunInfo{
-		Project:     os.Getenv(EnvProject),
-		Stack:       os.Getenv(EnvStack),
-		Config:      config,
-		Parallel:    parallel,
-		DryRun:      dryRun,
-		MonitorAddr: os.Getenv(EnvMonitor),
-		EngineAddr:  os.Getenv(EnvEngine),
+		Project:       os.Getenv(EnvProject),
+		Stack:         os.Getenv(EnvStack),
+		Config:        config,
+		Parallel:      parallel,
+		DryRun:        dryRun,
+		MonitorAddr:   os.Getenv(EnvMonitor),
+		EngineAddr:    os.Getenv(EnvEngine),
+		EnableSecrets: enableSecrets,
 	}
 }
 
@@ -153,4 +156,7 @@ const (
 	EnvMonitor = "PULUMI_MONITOR"
 	// EnvEngine is the envvar used to read the current Pulumi engine RPC address.
 	EnvEngine = "PULUMI_ENGINE"
+	// EnvEnableSecrets is the envvar used to determine whether or not the current Pulumi engine supports secrets.
+	// nolint: gosec
+	EnvEnableSecrets = "PULUMI_ENABLE_SECRETS"
 )

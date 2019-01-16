@@ -357,8 +357,11 @@ func (host *nodeLanguageHost) constructArguments(req *pulumirpc.RunRequest) []st
 	if req.GetDryRun() {
 		args = append(args, "--dry-run")
 	}
-
 	maybeAppendArg("parallel", fmt.Sprint(req.GetParallel()))
+	if req.GetEnableSecrets() {
+		args = append(args, "--enable-secrets")
+	}
+
 	maybeAppendArg("tracing", host.tracing)
 	if req.GetProgram() == "" {
 		// If the program path is empty, just use "."; this will cause Node to try to load the default module

@@ -32,6 +32,7 @@ class Settings:
     stack: Optional[str]
     parallel: Optional[str]
     dry_run: Optional[bool]
+    enable_secrets: Optional[bool]
 
     """
     A bag of properties for configuring the Pulumi Python language runtime.
@@ -42,12 +43,14 @@ class Settings:
                  project: Optional[str] = None,
                  stack: Optional[str] = None,
                  parallel: Optional[str] = None,
-                 dry_run: Optional[bool] = None):
+                 dry_run: Optional[bool] = None,
+                 enable_secrets: Optional[bool] = None): # pylint: disable=redefined-outer-name
         # Save the metadata information.
         self.project = project
         self.stack = stack
         self.parallel = parallel
         self.dry_run = dry_run
+        self.enable_secrets = enable_secrets
 
         # Actually connect to the monitor/engine over gRPC.
         if monitor:
@@ -80,6 +83,11 @@ def is_dry_run() -> bool:
     """
     return True if SETTINGS.dry_run else False
 
+def enable_secrets() -> bool:
+    """
+    Returns whether or not secret property values are enabled.
+    """
+    return True if SETTINGS.enable_secrets else False
 
 def get_project() -> Optional[str]:
     """

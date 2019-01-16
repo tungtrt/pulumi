@@ -34,6 +34,7 @@ if __name__ == "__main__":
     ap.add_argument('--monitor', help='An RPC address for the resource monitor to connect to')
     ap.add_argument('--engine', help='An RPC address for the engine to connect to')
     ap.add_argument('--tracing', help='A Zipkin-compatible endpoint to send tracing data to')
+    ap.add_argument('--enable_secrets', action='store_true', help='Enable secret property values when interacting with the engine')
     ap.add_argument('PROGRAM', help='The Python program to run')
     ap.add_argument('ARGS', help='Arguments to pass to the program', nargs='*')
     args = ap.parse_args()
@@ -51,7 +52,8 @@ if __name__ == "__main__":
             project=args.project,
             stack=args.stack,
             parallel=args.parallel,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            enable_secrets=args.enable_secrets
         )
     )
 

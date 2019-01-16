@@ -151,9 +151,10 @@ func (ctx *Context) Invoke(tok string, args map[string]interface{}, opts ...Invo
 	// Now, invoke the RPC to the provider synchronously.
 	glog.V(9).Infof("Invoke(%s, #args=%d): RPC call being made synchronously", tok, len(args))
 	resp, err := ctx.monitor.Invoke(ctx.ctx, &pulumirpc.InvokeRequest{
-		Tok:      tok,
-		Args:     rpcArgs,
-		Provider: provider,
+		Tok:           tok,
+		Args:          rpcArgs,
+		Provider:      provider,
+		EnableSecrets: true,
 	})
 	if err != nil {
 		glog.V(9).Infof("Invoke(%s, ...): error: %v", tok, err)
@@ -216,11 +217,12 @@ func (ctx *Context) ReadResource(
 
 		glog.V(9).Infof("ReadResource(%s, %s): Goroutine spawned, RPC call being made", t, name)
 		resp, err := ctx.monitor.ReadResource(ctx.ctx, &pulumirpc.ReadResourceRequest{
-			Type:       t,
-			Name:       name,
-			Parent:     inputs.parent,
-			Properties: inputs.rpcProps,
-			Provider:   inputs.provider,
+			Type:          t,
+			Name:          name,
+			Parent:        inputs.parent,
+			Properties:    inputs.rpcProps,
+			Provider:      inputs.provider,
+			EnableSecrets: true,
 		})
 		if err != nil {
 			glog.V(9).Infof("RegisterResource(%s, %s): error: %v", t, name, err)
@@ -283,14 +285,15 @@ func (ctx *Context) RegisterResource(
 
 		glog.V(9).Infof("RegisterResource(%s, %s): Goroutine spawned, RPC call being made", t, name)
 		resp, err := ctx.monitor.RegisterResource(ctx.ctx, &pulumirpc.RegisterResourceRequest{
-			Type:         t,
-			Name:         name,
-			Parent:       inputs.parent,
-			Object:       inputs.rpcProps,
-			Custom:       custom,
-			Protect:      inputs.protect,
-			Dependencies: inputs.deps,
-			Provider:     inputs.provider,
+			Type:          t,
+			Name:          name,
+			Parent:        inputs.parent,
+			Object:        inputs.rpcProps,
+			Custom:        custom,
+			Protect:       inputs.protect,
+			Dependencies:  inputs.deps,
+			Provider:      inputs.provider,
+			EnableSecrets: true,
 		})
 		if err != nil {
 			glog.V(9).Infof("RegisterResource(%s, %s): error: %v", t, name, err)

@@ -193,6 +193,7 @@ func (host *goLanguageHost) constructEnv(req *pulumirpc.RunRequest) ([]string, e
 	maybeAppendEnv(pulumi.EnvParallel, fmt.Sprint(req.GetParallel()))
 	maybeAppendEnv(pulumi.EnvMonitor, req.GetMonitorAddress())
 	maybeAppendEnv(pulumi.EnvEngine, host.engineAddress)
+	maybeAppendEnv(pulumi.EnvEnableSecrets, fmt.Sprintf("%v", req.GetEnableSecrets()))
 
 	return env, nil
 }

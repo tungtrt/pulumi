@@ -229,6 +229,10 @@ func (host *pythonLanguageHost) constructArguments(req *pulumirpc.RunRequest) []
 	maybeAppendArg("parallel", fmt.Sprint(req.GetParallel()))
 	maybeAppendArg("tracing", host.tracing)
 
+	if req.GetEnableSecrets() {
+		args = append(args, "--enable_secrets")
+	}
+
 	// If no program is specified, just default to the current directory (which will invoke "__main__.py").
 	if req.GetProgram() == "" {
 		args = append(args, ".")

@@ -164,7 +164,8 @@ def register_resource(res: 'Resource', ty: str, name: str, custom: bool, props: 
                 object=resolver.serialized_props,
                 protect=opts.protect,
                 provider=resolver.provider_ref,
-                dependencies=resolver.dependencies
+                dependencies=resolver.dependencies,
+                enableSecrets=True
             )
 
             def do_rpc_call():
