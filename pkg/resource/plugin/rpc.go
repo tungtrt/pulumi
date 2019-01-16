@@ -34,6 +34,7 @@ type MarshalOptions struct {
 	RejectUnknowns     bool   // true if we should return errors on unknown values. Takes precedence over KeepUnknowns.
 	ElideAssetContents bool   // true if we are eliding the contents of assets.
 	ComputeAssetHashes bool   // true if we are computing missing asset hashes on the fly.
+	KeepSecrets        bool   // true if we are keeping secrets (otherwise we replace them with their underlying value)
 }
 
 const (
@@ -127,11 +128,16 @@ func MarshalPropertyValue(v resource.PropertyValue, opts MarshalOptions) (*struc
 		}
 		return MarshalStruct(obj, opts), nil
 	} else if v.IsSecret() {
-		secret := resource.NewPropertyMapFromMap(map[string]interface{}{
-			string(resource.SigKey): resource.SecretSig,
-			"value":                 v.SecretValue().Element,
-		})
-		return MarshalPropertyValue(resource.NewObjectProperty(secret), opts)
+		if opts.KeepSecrets {
+			logging.Infof("keeping secret...")
+			secret := resource.NewObjectProperty(resource.PropertyMap{
+				resource.SigKey: resource.NewStringProperty(resource.SecretSig),
+				"value":         v.SecretValue().Element,
+			})
+			return MarshalPropertyValue(secret, opts)
+		} else {
+			return MarshalPropertyValue(v.SecretValue().Element, opts)
+		}
 	} else if v.IsComputed() {
 		if opts.RejectUnknowns {
 			return nil, errors.New("unexpected unknown property value")
@@ -311,12 +317,14 @@ func UnmarshalPropertyValue(v *structpb.Value, opts MarshalOptions) (*resource.P
 			return &m, nil
 
 		case resource.SecretSig:
-			logging.Infof("unmarshaling secret")
-
 			value, ok := obj["value"]
 			if !ok {
 				return nil, errors.New("malformed RPC secret: missing value")
 			}
+			if !opts.KeepSecrets {
+				return &value, nil
+			}
+			logging.Infof("keeping unmarshalled secret...")
 			s := resource.MakeSecret(value)
 			return &s, nil
 		default:

@@ -224,7 +224,10 @@ func (p *provider) Check(urn resource.URN,
 	var inputs resource.PropertyMap
 	if ins := resp.GetInputs(); ins != nil {
 		inputs, err = UnmarshalProperties(ins, MarshalOptions{
-			Label: fmt.Sprintf("%s.inputs", label), KeepUnknowns: allowUnknowns, RejectUnknowns: !allowUnknowns})
+			Label:          fmt.Sprintf("%s.inputs", label),
+			KeepUnknowns:   allowUnknowns,
+			RejectUnknowns: !allowUnknowns,
+			KeepSecrets:    true})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -360,7 +363,7 @@ func (p *provider) Create(urn resource.URN, props resource.PropertyMap) (resourc
 	}
 
 	outs, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return "", nil, resourceStatus, err
 	}
@@ -433,7 +436,7 @@ func (p *provider) Read(
 
 	// Finally, unmarshal the resulting state properties and return them.
 	results, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return nil, resourceStatus, err
 	}
@@ -494,7 +497,7 @@ func (p *provider) Update(urn resource.URN, id resource.ID,
 	}
 
 	outs, err := UnmarshalProperties(liveObject, MarshalOptions{
-		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true})
+		Label: fmt.Sprintf("%s.outputs", label), RejectUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return nil, resourceStatus, err
 	}
@@ -575,7 +578,7 @@ func (p *provider) Invoke(tok tokens.ModuleMember, args resource.PropertyMap) (r
 
 	// Unmarshal any return values.
 	ret, err := UnmarshalProperties(resp.GetReturn(), MarshalOptions{
-		Label: fmt.Sprintf("%s.returns", label), RejectUnknowns: true})
+		Label: fmt.Sprintf("%s.returns", label), RejectUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return nil, nil, err
 	}

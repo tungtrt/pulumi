@@ -32,7 +32,7 @@ func (rm *ResourceMonitor) RegisterResource(t tokens.Type, name string, custom b
 	inputs resource.PropertyMap) (resource.URN, resource.ID, resource.PropertyMap, error) {
 
 	// marshal inputs
-	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true})
+	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -59,7 +59,7 @@ func (rm *ResourceMonitor) RegisterResource(t tokens.Type, name string, custom b
 	}
 
 	// unmarshal outputs
-	outs, err := plugin.UnmarshalProperties(resp.Object, plugin.MarshalOptions{KeepUnknowns: true})
+	outs, err := plugin.UnmarshalProperties(resp.Object, plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -71,7 +71,7 @@ func (rm *ResourceMonitor) ReadResource(t tokens.Type, name string, id resource.
 	inputs resource.PropertyMap, provider string) (resource.URN, resource.PropertyMap, error) {
 
 	// marshal inputs
-	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true})
+	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return "", nil, err
 	}
@@ -89,7 +89,8 @@ func (rm *ResourceMonitor) ReadResource(t tokens.Type, name string, id resource.
 	}
 
 	// unmarshal outputs
-	outs, err := plugin.UnmarshalProperties(resp.Properties, plugin.MarshalOptions{KeepUnknowns: true})
+	outs, err := plugin.UnmarshalProperties(resp.Properties,
+		plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return "", nil, err
 	}
@@ -101,7 +102,7 @@ func (rm *ResourceMonitor) Invoke(tok tokens.ModuleMember,
 	inputs resource.PropertyMap, provider string) (resource.PropertyMap, []*pulumirpc.CheckFailure, error) {
 
 	// marshal inputs
-	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true})
+	ins, err := plugin.MarshalProperties(inputs, plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -122,7 +123,7 @@ func (rm *ResourceMonitor) Invoke(tok tokens.ModuleMember,
 	}
 
 	// unmarshal outputs
-	outs, err := plugin.UnmarshalProperties(resp.Return, plugin.MarshalOptions{KeepUnknowns: true})
+	outs, err := plugin.UnmarshalProperties(resp.Return, plugin.MarshalOptions{KeepUnknowns: true, KeepSecrets: true})
 	if err != nil {
 		return nil, nil, err
 	}
