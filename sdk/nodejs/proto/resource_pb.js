@@ -79,7 +79,8 @@ proto.pulumirpc.ReadResourceRequest.toObject = function(includeInstance, msg) {
     parent: jspb.Message.getFieldWithDefault(msg, 4, ""),
     properties: (f = msg.getProperties()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     dependenciesList: jspb.Message.getRepeatedField(msg, 6),
-    provider: jspb.Message.getFieldWithDefault(msg, 7, "")
+    provider: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    enablesecrets: jspb.Message.getFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -144,6 +145,10 @@ proto.pulumirpc.ReadResourceRequest.deserializeBinaryFromReader = function(msg, 
     case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setProvider(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setEnablesecrets(value);
       break;
     default:
       reader.skipField();
@@ -221,6 +226,13 @@ proto.pulumirpc.ReadResourceRequest.serializeBinaryToWriter = function(message, 
   if (f.length > 0) {
     writer.writeString(
       7,
+      f
+    );
+  }
+  f = message.getEnablesecrets();
+  if (f) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -358,6 +370,23 @@ proto.pulumirpc.ReadResourceRequest.prototype.getProvider = function() {
 /** @param {string} value */
 proto.pulumirpc.ReadResourceRequest.prototype.setProvider = function(value) {
   jspb.Message.setProto3StringField(this, 7, value);
+};
+
+
+/**
+ * optional bool enableSecrets = 8;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.pulumirpc.ReadResourceRequest.prototype.getEnablesecrets = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 8, false));
+};
+
+
+/** @param {boolean} value */
+proto.pulumirpc.ReadResourceRequest.prototype.setEnablesecrets = function(value) {
+  jspb.Message.setProto3BooleanField(this, 8, value);
 };
 
 
@@ -608,7 +637,8 @@ proto.pulumirpc.RegisterResourceRequest.toObject = function(includeInstance, msg
     object: (f = msg.getObject()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     protect: jspb.Message.getFieldWithDefault(msg, 6, false),
     dependenciesList: jspb.Message.getRepeatedField(msg, 7),
-    provider: jspb.Message.getFieldWithDefault(msg, 8, "")
+    provider: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    enablesecrets: jspb.Message.getFieldWithDefault(msg, 9, false)
   };
 
   if (includeInstance) {
@@ -677,6 +707,10 @@ proto.pulumirpc.RegisterResourceRequest.deserializeBinaryFromReader = function(m
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setProvider(value);
+      break;
+    case 9:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setEnablesecrets(value);
       break;
     default:
       reader.skipField();
@@ -761,6 +795,13 @@ proto.pulumirpc.RegisterResourceRequest.serializeBinaryToWriter = function(messa
   if (f.length > 0) {
     writer.writeString(
       8,
+      f
+    );
+  }
+  f = message.getEnablesecrets();
+  if (f) {
+    writer.writeBool(
+      9,
       f
     );
   }
@@ -917,6 +958,23 @@ proto.pulumirpc.RegisterResourceRequest.prototype.getProvider = function() {
 /** @param {string} value */
 proto.pulumirpc.RegisterResourceRequest.prototype.setProvider = function(value) {
   jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
+/**
+ * optional bool enableSecrets = 9;
+ * Note that Boolean fields may be set to 0/1 when serialized from a Java server.
+ * You should avoid comparisons like {@code val === true/false} in those cases.
+ * @return {boolean}
+ */
+proto.pulumirpc.RegisterResourceRequest.prototype.getEnablesecrets = function() {
+  return /** @type {boolean} */ (jspb.Message.getFieldWithDefault(this, 9, false));
+};
+
+
+/** @param {boolean} value */
+proto.pulumirpc.RegisterResourceRequest.prototype.setEnablesecrets = function(value) {
+  jspb.Message.setProto3BooleanField(this, 9, value);
 };
 
 

@@ -51,6 +51,7 @@ message RunRequest {
     bool dryRun = 7;                // true if we're only doing a dryrun (preview).
     int32 parallel = 8;             // the degree of parallelism for resource operations (<=1 for serial).
     string monitor_address = 9;     // the address for communicating back to the resource monitor.
+    bool enableSecrets = 10;        // true if the engine supports secret property values.
 }
 
 // RunResponse is the response back from the interpreter/source back to the monitor.

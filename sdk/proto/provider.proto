@@ -24,7 +24,7 @@ package pulumirpc;
 // within a single package.  It is driven by the overall planning engine in response to resource diffs.
 service ResourceProvider {
     // Configure configures the resource provider with "globals" that control its behavior.
-    rpc Configure(ConfigureRequest) returns (google.protobuf.Empty) {}
+    rpc Configure(ConfigureRequest) returns (ConfigureResponse) {}
     // Invoke dynamically executes a built-in function in the provider.
     rpc Invoke(InvokeRequest) returns (InvokeResponse) {}
     // Check validates that the given property bag is valid for a resource of the given type and returns the inputs
@@ -53,6 +53,11 @@ service ResourceProvider {
 
 message ConfigureRequest {
     map<string, string> variables = 1; // a map of configuration keys to values.
+    bool enableSecrets = 2;            // true if the engine supports secret property values.
+}
+
+message ConfigureResponse {
+	bool enableSecrets = 1; // true if the provider supports secret property values.
 }
 
 // ConfigureErrorMissingKeys is sent as a Detail on an error returned from `ResourceProvider.Configure`.
@@ -69,6 +74,7 @@ message InvokeRequest {
     string tok = 1;                  // the function token to invoke.
     google.protobuf.Struct args = 2; // the arguments for the function invocation.
     string provider = 3;             // an optional reference to the provider to use for this invoke.
+	bool enableSecrets = 4;          // (resource monitor only) true if the language host supports secret properties.
 }
 
 message InvokeResponse {
