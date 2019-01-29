@@ -180,6 +180,7 @@ export function registerResource(res: Resource, t: string, name: string, custom:
         req.setDeletebeforereplace((<any>opts).deleteBeforeReplace || false);
         req.setIgnorechangesList(opts.ignoreChanges || []);
         req.setVersion(opts.version || "");
+        req.setAliasesList(opts.aliases);
 
         const propertyDependencies = req.getPropertydependenciesMap();
         for (const [key, resourceURNs] of resop.propertyToDirectDependencyURNs) {
