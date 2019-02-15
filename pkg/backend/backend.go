@@ -214,7 +214,7 @@ func (c *backendClient) GetStackOutputs(ctx context.Context, name string) (resou
 		return nil, err
 	}
 	if s == nil {
-		return nil, errors.Errorf("unknown stack \"%s\"", name)
+		return nil, errors.Errorf("unknown stack %q", name)
 	}
 	snap, err := s.Snapshot(ctx)
 	if err != nil {
@@ -229,4 +229,34 @@ func (c *backendClient) GetStackOutputs(ctx context.Context, name string) (resou
 
 func (c *backendClient) DownloadPlugin(ctx context.Context, plug workspace.PluginInfo) (io.ReadCloser, error) {
 	return nil, errors.New("downloading plugins at runtime not available when using local backend")
+}
+
+// GetStackResourceOutputs returns the resource outputs of type (if any) for a stack, or an
+// error if the stack cannot be found. Resources are retrieved from the latest stack snapshot,
+// which may include ongoing updates. `typ` optionally specifies the type of resource to
+// retrieve, formatted using the Pulumi URN format (e.g., `kubernetes:core/v1:Service`).
+func (c *backendClient) GetStackResourceOutputs(
+	ctx context.Context, name, typ string) (resource.PropertyMap, error) {
+	ref, err := c.backend.ParseStackReference(name)
+	if err != nil {
+		return nil, err
+	}
+	s, err := c.backend.GetStack(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	if s == nil {
+		return nil, errors.Errorf("unknown stack %q", name)
+	}
+	snap, err := s.Snapshot(ctx)
+	if err != nil {
+		return nil, err
+	}
+	pm := resource.PropertyMap{}
+	for _, r := range snap.Resources {
+		if typ == "" || string(r.Type) == typ {
+			pm[resource.PropertyKey(r.ID)] = resource.NewObjectProperty(r.Outputs)
+		}
+	}
+	return pm, nil
 }
