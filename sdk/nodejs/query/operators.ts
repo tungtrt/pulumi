@@ -15,57 +15,6 @@
 import { Enumerator } from "./interfaces";
 import { ListEnumerator } from "./sources";
 
-export class ToArray<T> implements Enumerator<T[]> {
-    private completed = false;
-    private ts: T[] = [];
-
-    constructor(private readonly source: Enumerator<T>) {}
-
-    public current(): T[] {
-        return this.ts;
-    }
-
-    public moveNext(): boolean {
-        if (this.completed === false) {
-            while (this.source.moveNext()) {
-                this.ts.push(this.source.current());
-            }
-            this.completed = true;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public reset(): void {
-        this.source.reset();
-    }
-
-    public dispose(): void {
-        this.source.dispose();
-    }
-}
-
-export class Map<T, U> implements Enumerator<U> {
-    constructor(private readonly source: Enumerator<T>, private readonly f: (t: T) => U) {}
-
-    public current(): U {
-        return this.f(this.source.current());
-    }
-
-    public moveNext(): boolean {
-        return this.source.moveNext();
-    }
-
-    public reset(): void {
-        this.source.reset();
-    }
-
-    public dispose(): void {
-        this.source.dispose();
-    }
-}
-
 export class Filter<T> implements Enumerator<T> {
     constructor(private readonly source: Enumerator<T>, private readonly f: (t: T) => boolean) {}
 
@@ -79,43 +28,7 @@ export class Filter<T> implements Enumerator<T> {
                 return true;
             }
         }
-        this.dispose();
         return false;
-    }
-
-    public reset(): void {
-        this.source.reset();
-    }
-
-    public dispose(): void {
-        this.source.dispose();
-    }
-}
-
-export class Take<T> implements Enumerator<T> {
-    private index: number = 0;
-
-    constructor(private readonly source: Enumerator<T>, private readonly n: number) {}
-
-    public current(): T {
-        return this.source.current();
-    }
-
-    public moveNext(): boolean {
-        this.index++;
-        if (this.index <= this.n && this.source.moveNext()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public reset(): void {
-        this.source.reset();
-    }
-
-    public dispose(): void {
-        this.source.dispose();
     }
 }
 
@@ -145,12 +58,35 @@ export class FlatMap<T, U> implements Enumerator<U> {
             }
         }
     }
+}
 
-    public reset(): void {
-        this.source.reset();
+export class Map<T, U> implements Enumerator<U> {
+    constructor(private readonly source: Enumerator<T>, private readonly f: (t: T) => U) {}
+
+    public current(): U {
+        return this.f(this.source.current());
     }
 
-    public dispose(): void {
-        this.source.dispose();
+    public moveNext(): boolean {
+        return this.source.moveNext();
+    }
+}
+
+export class Take<T> implements Enumerator<T> {
+    private index: number = 0;
+
+    constructor(private readonly source: Enumerator<T>, private readonly n: number) {}
+
+    public current(): T {
+        return this.source.current();
+    }
+
+    public moveNext(): boolean {
+        this.index++;
+        if (this.index <= this.n && this.source.moveNext()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

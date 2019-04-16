@@ -21,25 +21,17 @@ export class RangeEnumerator implements Enumerator<number> {
         this.curr = start - 1;
     }
 
-    public dispose(): void {
-        return;
-    }
-
     public current(): number {
         return this.curr;
     }
 
     public moveNext(): boolean {
+        this.curr++;
         if (this.stop === undefined || this.curr < this.stop) {
-            this.curr++;
             return true;
         } else {
             return false;
         }
-    }
-
-    public reset(): void {
-        this.curr = this.start - 1;
     }
 }
 
@@ -50,10 +42,6 @@ export class ListEnumerator<T> implements Enumerator<T> {
     }
 
     private constructor(private readonly ts: T[]) {}
-
-    public dispose(): void {
-        return;
-    }
 
     public current(): T {
         if (this.index < 0) {
@@ -68,9 +56,5 @@ export class ListEnumerator<T> implements Enumerator<T> {
     public moveNext(): boolean {
         this.index++;
         return this.index < this.ts.length;
-    }
-
-    public reset(): void {
-        this.index = -1;
     }
 }

@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//
+// NOTE: We choose to be purposefully conservative about what details are exposed through these
+// interfaces in case we decide to change the implementation drastically later.
+//
+
 import { EnumerablePromise } from "./enumerablePromise";
 
 export { Enumerable } from "./interfaces";
 
-export function from<T>(source: T[] | PromiseLike<T[]>): EnumerablePromise<T> {
+export function from<T>(source: T[] | Promise<T[]>): EnumerablePromise<T> {
     return EnumerablePromise.from(source);
 }
 

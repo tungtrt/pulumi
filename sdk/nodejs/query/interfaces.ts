@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export interface Disposable {
-    dispose(): void;
-}
+//
+// NOTE: We don't need `Disposable` or `Enumerator#reset()` yet, but it's worth noting here that we
+// didn't include them, and this causes us to diverge slightly from the "canonical" `Enumerable`
+// model.
+//
 
 export interface Enumerable<T> {
-    map<U>(f: (t: T) => U): Enumerable<U>;
     filter(f: (t: T) => boolean): Enumerable<T>;
-    take(n: number): Enumerable<T>;
     flatMap(f: (t: T, index?: number) => T[]): Enumerable<T>;
-    toArray(): Enumerable<T[]>;
+    map<U>(f: (t: T) => U): Enumerable<U>;
+    take(n: number): Enumerable<T>;
+
+    toArray(): Promise<T[]>;
     forEach(f: (t: T) => void): void;
 }
 
-export interface Enumerator<T> extends Disposable {
+export interface Enumerator<T> {
     current(): T;
     moveNext(): boolean;
-    reset(): void;
 }

@@ -70,7 +70,7 @@
         "tests/runtime/tsClosureCases.ts",
         "tests/runtime/props.spec.ts",
         "tests/runtime/langhost/run.spec.ts",
-        "tests/query/endToEnd.spec.ts"
+        "tests/query/enumerablePromise.spec.ts"
     ]
 }
 

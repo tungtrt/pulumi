@@ -13,49 +13,59 @@
 // limitations under the License.
 
 import { Enumerable, Enumerator } from "./interfaces";
-import { Filter, FlatMap, Map, Take, ToArray } from "./operators";
+import { Filter, FlatMap, Map, Take } from "./operators";
 import { ListEnumerator, RangeEnumerator } from "./sources";
 
-export class EnumerablePromise<T> implements Enumerable<T> {
-    static from<T>(source: T[] | PromiseLike<T[]>): EnumerablePromise<T> {
+export class EnumerablePromise<T> extends Promise<Enumerator<T>> implements Enumerable<T> {
+    public static from<T>(source: T[] | Promise<T[]>): EnumerablePromise<T> {
         if (Array.isArray(source)) {
-            return new EnumerablePromise(Promise.resolve(ListEnumerator.from(source)));
+            return new EnumerablePromise(resolve => resolve(ListEnumerator.from(source)));
         } else {
-            return new EnumerablePromise(source.then(ListEnumerator.from));
+            return new EnumerablePromise(resolve =>
+                source.then(ts => resolve(ListEnumerator.from(ts))),
+            );
         }
     }
 
-    static range(start: number, stop?: number): EnumerablePromise<number> {
-        return new EnumerablePromise(Promise.resolve(new RangeEnumerator(start, stop)));
+    public static range(start: number, stop?: number): EnumerablePromise<number> {
+        return new EnumerablePromise(resolve => resolve(new RangeEnumerator(start, stop)));
     }
-    private constructor(private readonly source: PromiseLike<Enumerator<T>>) {}
 
-    public map<U>(f: (t: T) => U): EnumerablePromise<U> {
-        return new EnumerablePromise(this.source.then(ts => new Map(ts, f)));
+    private constructor(executor: (resolve: (value?: Enumerator<T>) => void) => void) {
+        super(executor);
     }
 
     public filter(f: (t: T) => boolean): EnumerablePromise<T> {
-        return new EnumerablePromise(this.source.then(ts => new Filter(ts, f)));
-    }
-
-    public take(n: number): EnumerablePromise<T> {
-        return new EnumerablePromise(this.source.then(ts => new Take(ts, n)));
-    }
-
-    public toArray(): Enumerable<T[]> {
-        return new EnumerablePromise(this.source.then(ts => new ToArray(ts)));
+        return new EnumerablePromise(resolve => this.then(ts => resolve(new Filter(ts, f))));
     }
 
     public flatMap<U>(f: (t: T) => U[]): EnumerablePromise<U> {
-        return new EnumerablePromise(this.source.then(ts => new FlatMap(ts, f)));
+        return new EnumerablePromise(resolve => this.then(ts => resolve(new FlatMap(ts, f))));
+    }
+
+    public map<U>(f: (t: T) => U): EnumerablePromise<U> {
+        return new EnumerablePromise(resolve => this.then(ts => resolve(new Map(ts, f))));
+    }
+
+    public take(n: number): EnumerablePromise<T> {
+        return new EnumerablePromise(resolve => this.then(ts => resolve(new Take(ts, n))));
+    }
+
+    public toArray(): Promise<T[]> {
+        return this.then(ts => {
+            const tss: T[] = [];
+            while (ts.moveNext()) {
+                tss.push(ts.current());
+            }
+            return tss;
+        });
     }
 
     public forEach(f: (t: T) => void): void {
-        this.source.then(ts => {
+        this.then(ts => {
             while (ts.moveNext()) {
                 f(ts.current());
             }
-            ts.dispose();
         });
     }
 }
