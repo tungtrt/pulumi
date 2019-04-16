@@ -18,6 +18,7 @@ import { Input, Inputs, Output } from "../output";
 import { ComponentResource, CustomResource, CustomResourceOptions, ID, Resource, ResourceOptions, URN } from "../resource";
 import { debuggablePromise } from "./debuggable";
 
+import { invoke } from "./invoke";
 import {
     deserializeProperties,
     deserializeProperty,
@@ -30,6 +31,7 @@ import {
     unknownValue,
 } from "./rpc";
 import { excessiveDebugOutput, getMonitor, getRootResource, rpcKeepAlive, serialize } from "./settings";
+import { getStack } from "./settings";
 
 const gstruct = require("google-protobuf/google/protobuf/struct_pb.js");
 const resproto = require("../proto/resource_pb.js");
@@ -451,6 +453,22 @@ export function registerResourceOutputs(res: Resource, outputs: Inputs | Promise
                 }
             })), label);
     }, false);
+}
+
+/**
+ * GetStackResourceOutputs returns the resource outputs of type (if any) for a stack, or an error if
+ * the stack cannot be found. Resources are retrieved from the latest stack snapshot, which may
+ * include ongoing updates.
+ *
+ * @param stackName Name of stack to retrieve resource outputs for. Defaults to the current stack.
+ * @param type Type of resources to retrieve outputs for. Formatted using the Pulumi URN format for
+ * types (e.g., `kubernetes:core/v1:Service` for a Kubernetes Service).
+ */
+export function getResourceOutputs(stackName?: string, type?: string): Promise<any[]> {
+    return invoke("pulumi:pulumi:readStackResourceOutputs", {
+        stackName: stackName || getStack(),
+        type: type,
+    }).then(outs => Object.values(outs.outputs));
 }
 
 /**
