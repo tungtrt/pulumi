@@ -701,24 +701,12 @@ func (b *cloudBackend) createAndStartUpdate(
 	if err != nil {
 		return client.UpdateIdentifier{}, 0, "", err
 	}
-	stackConfigFile := b.stackConfigFile
-	if stackConfigFile == "" {
-		f, err := workspace.DetectProjectStackPath(stackRef.Name())
-		if err != nil {
-			return client.UpdateIdentifier{}, 0, "", err
-		}
-		stackConfigFile = f
-	}
-	workspaceStack, err := workspace.LoadProjectStack(stackConfigFile)
-	if err != nil {
-		return client.UpdateIdentifier{}, 0, "", errors.Wrap(err, "getting configuration")
-	}
 	metadata := apitype.UpdateMetadata{
 		Message:     op.M.Message,
 		Environment: op.M.Environment,
 	}
 	update, err := b.client.CreateUpdate(
-		ctx, action, stackID, op.Proj, workspaceStack.Config, metadata, op.Opts.Engine, dryRun)
+		ctx, action, stackID, op.Proj, op.StackConfiguration.Config, metadata, op.Opts.Engine, dryRun)
 	if err != nil {
 		return client.UpdateIdentifier{}, 0, "", err
 	}
@@ -786,7 +774,7 @@ func (b *cloudBackend) runEngineAction(
 	callerEventsOpt chan<- engine.Event, dryRun bool) (engine.ResourceChanges, result.Result) {
 
 	contract.Assertf(token != "", "persisted actions require a token")
-	u, err := b.newUpdate(ctx, stackRef, op.Proj, op.Root, update, token)
+	u, err := b.newUpdate(ctx, stackRef, op, update, token)
 	if err != nil {
 		return nil, result.FromError(err)
 	}
@@ -968,7 +956,7 @@ func convertConfig(apiConfig map[string]apitype.ConfigValue) (config.Map, error)
 	return c, nil
 }
 
-func (b *cloudBackend) GetLogs(ctx context.Context, stackRef backend.StackReference,
+func (b *cloudBackend) GetLogs(ctx context.Context, stackRef backend.StackReference, cfg backend.StackConfiguration,
 	logQuery operations.LogQuery) ([]operations.LogEntry, error) {
 
 	stack, err := b.GetStack(ctx, stackRef)
@@ -979,7 +967,7 @@ func (b *cloudBackend) GetLogs(ctx context.Context, stackRef backend.StackRefere
 		return nil, errors.New("stack not found")
 	}
 
-	target, targetErr := b.getTarget(ctx, stackRef)
+	target, targetErr := b.getTarget(ctx, stackRef, cfg.Config, cfg.Decrypter)
 	if targetErr != nil {
 		return nil, targetErr
 	}

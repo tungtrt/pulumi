@@ -333,7 +333,7 @@ func (b *localBackend) apply(
 		colors.SpecHeadline+"%s (%s):"+colors.Reset+"\n"), actionLabel, stackRef)
 
 	// Start the update.
-	update, err := b.newUpdate(stackName, op.Proj, op.Root)
+	update, err := b.newUpdate(stackName, op)
 	if err != nil {
 		return nil, result.FromError(err)
 	}
@@ -462,11 +462,11 @@ func (b *localBackend) GetHistory(ctx context.Context, stackRef backend.StackRef
 	return updates, nil
 }
 
-func (b *localBackend) GetLogs(ctx context.Context, stackRef backend.StackReference,
+func (b *localBackend) GetLogs(ctx context.Context, stackRef backend.StackReference, cfg backend.StackConfiguration,
 	query operations.LogQuery) ([]operations.LogEntry, error) {
 
 	stackName := stackRef.Name()
-	target, err := b.getTarget(stackName)
+	target, err := b.getTarget(stackName, cfg.Config, cfg.Decrypter)
 	if err != nil {
 		return nil, err
 	}
