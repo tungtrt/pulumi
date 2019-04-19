@@ -58,9 +58,8 @@ type Backend interface {
 }
 
 type localBackend struct {
-	d               diag.Sink
-	url             string
-	stackConfigFile string
+	d   diag.Sink
+	url string
 }
 
 type localBackendReference struct {
@@ -79,19 +78,18 @@ func IsLocalBackendURL(url string) bool {
 	return strings.HasPrefix(url, localBackendURLPrefix)
 }
 
-func New(d diag.Sink, url, stackConfigFile string) (Backend, error) {
+func New(d diag.Sink, url string) (Backend, error) {
 	if !IsLocalBackendURL(url) {
 		return nil, errors.Errorf("local URL %s has an illegal prefix; expected %s", url, localBackendURLPrefix)
 	}
 	return &localBackend{
-		d:               d,
-		url:             url,
-		stackConfigFile: stackConfigFile,
+		d:   d,
+		url: url,
 	}, nil
 }
 
-func Login(d diag.Sink, url, stackConfigFile string) (Backend, error) {
-	be, err := New(d, url, stackConfigFile)
+func Login(d diag.Sink, url string) (Backend, error) {
+	be, err := New(d, url)
 	if err != nil {
 		return nil, err
 	}
