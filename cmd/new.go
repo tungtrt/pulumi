@@ -665,7 +665,7 @@ func promptForConfig(
 
 				// Lazily get the crypter, only if needed, to avoid prompting for a password with the local backend.
 				if secret && crypter == nil {
-					if crypter, err = backend.GetStackCrypter(stack); err != nil {
+					if crypter, err = getStackCrypter(stack); err != nil {
 						return nil, err
 					}
 				}
@@ -702,7 +702,7 @@ func promptForConfig(
 		if secret {
 			// Lazily get the crypter, only if needed, to avoid prompting for a password with the local backend.
 			if crypter == nil {
-				if crypter, err = backend.GetStackCrypter(stack); err != nil {
+				if crypter, err = getStackCrypter(stack); err != nil {
 					return nil, err
 				}
 			}
