@@ -179,6 +179,7 @@ export function registerResource(res: Resource, t: string, name: string, custom:
         req.setDependenciesList(Array.from(resop.allDirectDependencyURNs));
         req.setDeletebeforereplace((<any>opts).deleteBeforeReplace || false);
         req.setAcceptsecrets(true);
+        req.setSecretoutputsList((<any>opts).additionalSecretOutputs || []);
 
         const propertyDependencies = req.getPropertydependenciesMap();
         for (const [key, resourceURNs] of resop.propertyToDirectDependencyURNs) {
