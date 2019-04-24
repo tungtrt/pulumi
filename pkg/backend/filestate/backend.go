@@ -494,7 +494,7 @@ func (b *localBackend) ExportDeployment(ctx context.Context,
 	}
 
 	if snap == nil {
-		snap = deploy.NewSnapshot(deploy.Manifest{}, nil, nil)
+		snap = deploy.NewSnapshot(deploy.Manifest{}, nil, nil, nil)
 	}
 
 	// TODO(ellismg): Fix this up!
