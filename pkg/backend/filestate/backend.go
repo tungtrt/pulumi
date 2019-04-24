@@ -25,8 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pulumi/pulumi/pkg/secrets/b64"
-
 	"github.com/pkg/errors"
 
 	"github.com/pulumi/pulumi/pkg/apitype"
@@ -355,7 +353,7 @@ func (b *localBackend) apply(
 	}()
 
 	// Create the management machinery.
-	persister := b.newSnapshotPersister(stackName, b64.NewBase64SecretsManager())
+	persister := b.newSnapshotPersister(stackName, op.SecretsManager)
 	manager := backend.NewSnapshotManager(persister, update.GetTarget().Snapshot)
 	engineCtx := &engine.Context{
 		Cancel:          scope.Context(),
