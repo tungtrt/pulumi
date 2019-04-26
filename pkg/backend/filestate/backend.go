@@ -43,6 +43,7 @@ import (
 	"github.com/pulumi/pulumi/pkg/util/contract"
 	"github.com/pulumi/pulumi/pkg/util/logging"
 	"github.com/pulumi/pulumi/pkg/util/result"
+	"github.com/pulumi/pulumi/pkg/util/validation"
 	"github.com/pulumi/pulumi/pkg/workspace"
 )
 
@@ -150,7 +151,7 @@ func (b *localBackend) CreateStack(ctx context.Context, stackRef backend.StackRe
 	if err != nil {
 		return nil, errors.Wrap(err, "getting stack tags")
 	}
-	if err = backend.ValidateStackProperties(string(stackName), tags); err != nil {
+	if err = validation.ValidateStackProperties(string(stackName), tags); err != nil {
 		return nil, errors.Wrap(err, "validating stack properties")
 	}
 
