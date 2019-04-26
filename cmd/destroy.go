@@ -17,8 +17,6 @@ package cmd
 import (
 	"context"
 
-	"github.com/pulumi/pulumi/pkg/secrets/b64"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -100,6 +98,11 @@ func newDestroyCmd() *cobra.Command {
 				return result.FromError(errors.Wrap(err, "getting stack configuration"))
 			}
 
+			sm, err := getStackSecretsManager(s)
+			if err != nil {
+				return result.FromError(errors.Wrap(err, "getting secrets manager"))
+			}
+
 			opts.Engine = engine.UpdateOptions{
 				Analyzers: analyzers,
 				Parallel:  parallel,
@@ -113,7 +116,7 @@ func newDestroyCmd() *cobra.Command {
 				M:                  m,
 				Opts:               opts,
 				StackConfiguration: cfg,
-				SecretsManager:     b64.NewBase64SecretsManager(),
+				SecretsManager:     sm,
 				Scopes:             cancellationScopes,
 			})
 			if res != nil && res.Error() == context.Canceled {
